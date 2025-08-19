@@ -148,8 +148,8 @@
             const gameAreaRect = gameArea.getBoundingClientRect();
             const maxX = gameAreaRect.width - 55;
             const maxY = gameAreaRect.height - 55;
-            target.style.left = ${Math.floor(Math.random() * maxX)}px;
-            target.style.top = ${Math.floor(Math.random() * maxY)}px;
+            target.style.left = `${Math.floor(Math.random() * maxX)}px`;
+            target.style.top = `${Math.floor(Math.random() * maxY)}px`;
 
             // Evento al tocar
             target.addEventListener('click', () => {
@@ -193,11 +193,11 @@
             gameMessage.style.display = 'block';
 
             if (didWin) {
-                gameMessage.textContent = ¡Ganaste! Lo lograste con ${score} puntos.;
+                gameMessage.textContent = `¡Ganaste! Lo lograste con ${score} puntos.`;
                 gameMessage.classList.remove('text-red-400');
                 gameMessage.classList.add('text-green-400');
             } else {
-                gameMessage.textContent = ¡Perdiste! Necesitabas 5 puntos. Tu puntuación: ${score}.;
+                gameMessage.textContent = `¡Perdiste! Necesitabas 5 puntos. Tu puntuación: ${score}.`;
                 gameMessage.classList.add('text-red-400');
                 gameMessage.classList.remove('text-green-400');
             }
