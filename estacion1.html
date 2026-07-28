@@ -4,142 +4,555 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estación 1: Los Ojos del Robot</title>
-    <!-- Carga de Tailwind CSS para los estilos -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Carga de la fuente Inter de Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
     <style>
         body { 
             font-family: 'Inter', sans-serif; 
         }
-        /* Estilos para la selección en la actividad visual */
+        
+        /* Estilos para las opciones interactivas */
         .option-box {
-            transition: transform 0.2s ease, border-color 0.2s ease;
+            transition: all 0.3s ease;
         }
-        .option-box:hover {
-            transform: scale(1.05);
-            border-color: #6366f1; /* indigo-500 */
+        .option-box:hover:not(.disabled) {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
+            border-color: #818cf8;
+        }
+        .disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Animaciones de validación */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+        .shake-error {
+            animation: shake 0.4s ease-in-out;
+            border-color: #ef4444 !important; /* red-500 */
+        }
+        .pulse-success {
+            box-shadow: 0 0 20px 5px rgba(74, 222, 128, 0.4);
+            border-color: #4ade80 !important; /* green-400 */
+        }
+
+        /* --- CSS para el Cubo 3D Realista --- */
+        .scene {
+            width: 100px;
+            height: 100px;
+            perspective: 400px;
+            margin: 0 auto;
+        }
+        .cube {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: rotateCube 8s infinite linear;
+        }
+        .cube-static {
+            transform: rotateX(-20deg) rotateY(45deg);
+        }
+        .face {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border: 2px solid #0ea5e9; /* sky-500 */
+            background: rgba(14, 165, 233, 0.3); /* sky-500 transparent */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            box-shadow: inset 0 0 15px rgba(14, 165, 233, 0.5);
+        }
+        .front  { transform: rotateY(  0deg) translateZ(50px); }
+        .right  { transform: rotateY( 90deg) translateZ(50px); }
+        .back   { transform: rotateY(180deg) translateZ(50px); }
+        .left   { transform: rotateY(-90deg) translateZ(50px); }
+        .top    { transform: rotateX( 90deg) translateZ(50px); }
+        .bottom { transform: rotateX(-90deg) translateZ(50px); }
+        
+        @keyframes rotateCube {
+            0%   { transform: rotateX(0deg) rotateY(0deg); }
+            100% { transform: rotateX(360deg) rotateY(360deg); }
+        }
+
+        /* --- CSS para el Simulador Ultrasónico --- */
+        .sonar-wave {
+            transition: left 0.5s linear, opacity 0.2s;
+        }
+        .radar-ping {
+            animation: radarPing 1.5s infinite;
+        }
+        @keyframes radarPing {
+            0% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(6, 182, 212, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
         }
     </style>
 </head>
 <body class="bg-slate-900 text-white antialiased">
 
-    <!-- Contenedor principal centrado y con padding -->
-    <div class="container mx-auto p-6 max-w-2xl">
+    <!-- Contenedor principal -->
+    <div class="container mx-auto p-6 max-w-3xl">
         
-        <!-- Encabezado de la estación -->
         <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-black text-cyan-400">ESTACIÓN 1</h1>
+            <h1 class="text-3xl md:text-4xl font-black text-cyan-400 tracking-wider">ESTACIÓN 1</h1>
             <h2 class="text-2xl md:text-3xl font-bold mt-2">Los Ojos del Robot</h2>
         </header>
 
-        <!-- Tarjeta de contenido principal -->
-        <main class="bg-slate-800 rounded-2xl shadow-lg p-6 md:p-8">
+        <main class="space-y-8">
             
-            <!-- Texto explicativo del sensor -->
-            <div class="mb-8">
-                <p class="text-lg leading-relaxed text-slate-300">
-                    ¡Felicidades! Has activado el <strong class="font-bold text-cyan-400">sensor de proximidad ultrasónico</strong>. Este sensor funciona como los oídos de un murciélago, emitiendo ondas de sonido que rebotan en los objetos. Al medir el tiempo que tarda en volver el eco, el robot puede "ver" y calcular la distancia para no chocar.
+            <section class="bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-700">
+                <div class="p-6 md:p-8">
+                    <h3 class="text-2xl font-bold text-cyan-300 mb-4 flex items-center">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        Simulador: Sensor Ultrasónico
+                    </h3>
+                    <p class="text-lg leading-relaxed text-slate-300 mb-6">
+                        El sensor ultrasónico funciona como los oídos de un murciélago. Emite una onda de sonido invisible y <strong>mide el tiempo que tarda en ir, rebotar en un objeto y regresar (el eco)</strong>. Como la onda hace un viaje de ida y vuelta, el robot calcula el tiempo total y lo divide a la mitad para conocer la distancia exacta.
+                        <br><br><strong>¡Prueba el simulador!</strong> Mueve la caja y observa el viaje de la onda.
+                    </p>
+
+                    <!-- Área del Simulador -->
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 relative">
+                        <!-- UI Controles del simulador -->
+                        <div class="flex flex-col sm:flex-row justify-between items-center mb-2 gap-4">
+                            <button id="btn-ping" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-colors radar-ping active:scale-95 w-full sm:w-auto">
+                                Lanzar Pulso
+                            </button>
+                            <div class="grid grid-cols-2 gap-4 text-right w-full sm:w-auto bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-inner">
+                                <div>
+                                    <p class="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Tiempo (Ida y Vuelta)</p>
+                                    <p id="time-display" class="text-xl font-mono font-bold text-emerald-400">0.00 ms</p>
+                                </div>
+                                <div class="border-l border-slate-700 pl-4">
+                                    <p class="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Distancia (Mitad del viaje)</p>
+                                    <p id="distance-display" class="text-xl font-mono font-bold text-cyan-400">-- cm</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Panel de estado dinámico -->
+                        <div id="status-display" class="text-center text-sm font-semibold text-slate-400 mb-3 h-5 transition-colors">
+                            El sensor está en espera...
+                        </div>
+
+                        <!-- Lienzo del radar -->
+                        <div class="relative w-full h-32 bg-slate-800 rounded-lg overflow-hidden border border-slate-600 flex items-center">
+                            <!-- Sensor (Robot) -->
+                            <div class="absolute left-4 z-10 flex flex-col items-center">
+                                <div class="w-8 h-12 bg-slate-400 rounded-sm flex items-center justify-center border-2 border-slate-300">
+                                    <div class="w-3 h-3 bg-black rounded-full mb-1"></div>
+                                    <div class="w-3 h-3 bg-black rounded-full mt-1"></div>
+                                </div>
+                                <span class="text-xs text-slate-400 mt-1">Sensor</span>
+                            </div>
+
+                            <!-- Onda de sonido -->
+                            <div id="sonar-wave" class="sonar-wave absolute left-12 w-6 h-12 border-r-4 border-cyan-400 rounded-full opacity-0 z-20"></div>
+
+                            <!-- Obstáculo -->
+                            <div id="obstacle" class="absolute left-[70%] w-12 h-20 bg-amber-500 rounded border-2 border-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.5)] z-10 transition-all duration-100 cursor-ew-resize" style="left: 70%;"></div>
+                        </div>
+
+                        <!-- Slider para mover obstáculo -->
+                        <div class="mt-4 flex items-center gap-4">
+                            <span class="text-sm text-slate-400">Cerca</span>
+                            <input type="range" id="obstacle-slider" min="20" max="90" value="70" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500">
+                            <span class="text-sm text-slate-400">Lejos</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-fuchsia-900/40 rounded-2xl shadow-xl p-6 md:p-8 border-l-4 border-fuchsia-500">
+                <h3 class="font-bold text-2xl text-fuchsia-300 mb-4">Reto Práctico: Rescate en la Oscuridad</h3>
+                <p class="text-slate-300 mb-6 text-lg">
+                    El robot debe recuperar un cubo de energía en un cuarto totalmente oscuro. Sus registros indican que el cubo está <strong>exactamente a 40 cm</strong> de distancia. 
+                    <br><br>
+                    Frente a ti hay 3 sombras sospechosas. Usa el radar sónico de tu robot para medir el tiempo del eco en cada una. 
+                    <br><br>
+                    <span class="bg-fuchsia-950 px-3 py-2 rounded-lg text-fuchsia-200 font-mono text-sm border border-fuchsia-500/50 inline-block shadow-inner">
+                        <strong>PISTA CLAVE:</strong> Si el sonido viaja a 1 cm por milisegundo (ms), calcula cuánto tiempo debe tardar el sonido en hacer el viaje de <strong>IDA (40cm)</strong> y de <strong>VUELTA (40cm)</strong>.
+                    </span>
                 </p>
-            </div>
 
-            <!-- Caja con el Reto Interactivo -->
-            <div class="bg-teal-900/50 border-l-4 border-teal-400 p-6 rounded-lg mb-8">
-                <h3 class="font-bold text-xl text-teal-300 mb-4">Reto Interactivo: ¡Visión de Cíclope! 🤖</h3>
-                <p class="text-slate-300 mb-6">
-                    Tu cerebro usa tus dos ojos para crear una imagen 3D y juzgar la distancia perfectamente. El sensor ultrasónico es como tener un solo 'ojo' sónico. ¡Vamos a probar la diferencia!
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                    <!-- Sombra 1 -->
+                    <div class="bg-slate-800 border-2 border-slate-600 rounded-xl p-4 flex flex-col items-center transition-all relative overflow-hidden group" id="box1-container">
+                        <div class="text-6xl mb-3 opacity-30 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">📦</div>
+                        <h4 class="font-bold text-slate-300 text-lg">Sombra 1</h4>
+                        <div class="w-full bg-slate-900 rounded-lg p-2 my-4 border border-slate-700 h-16 flex items-center justify-center relative overflow-hidden shadow-inner">
+                             <span id="ping-result-1" class="font-mono text-xl text-slate-600">-- ms</span>
+                             <div id="wave-anim-1" class="absolute left-[-20px] w-2 h-full bg-cyan-400 opacity-0 rounded-full blur-[2px]"></div>
+                        </div>
+                        <button onclick="scanBox(1, 30)" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2.5 rounded-lg mb-3 transition-colors shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                            <span class="text-lg">📡</span> Lanzar Sonar
+                        </button>
+                        <button onclick="selectBox(1, false, 15)" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white font-bold py-2 rounded-lg transition-colors border border-slate-600">
+                            Es esta sombra
+                        </button>
+                    </div>
+
+                    <!-- Sombra 2 (Correcta) -->
+                    <div class="bg-slate-800 border-2 border-slate-600 rounded-xl p-4 flex flex-col items-center transition-all relative overflow-hidden group" id="box2-container">
+                        <div class="text-6xl mb-3 opacity-30 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">📦</div>
+                        <h4 class="font-bold text-slate-300 text-lg">Sombra 2</h4>
+                        <div class="w-full bg-slate-900 rounded-lg p-2 my-4 border border-slate-700 h-16 flex items-center justify-center relative overflow-hidden shadow-inner">
+                             <span id="ping-result-2" class="font-mono text-xl text-slate-600">-- ms</span>
+                             <div id="wave-anim-2" class="absolute left-[-20px] w-2 h-full bg-cyan-400 opacity-0 rounded-full blur-[2px]"></div>
+                        </div>
+                        <button onclick="scanBox(2, 80)" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2.5 rounded-lg mb-3 transition-colors shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                            <span class="text-lg">📡</span> Lanzar Sonar
+                        </button>
+                        <button onclick="selectBox(2, true, 40)" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white font-bold py-2 rounded-lg transition-colors border border-slate-600">
+                            Es esta sombra
+                        </button>
+                    </div>
+
+                    <!-- Sombra 3 -->
+                    <div class="bg-slate-800 border-2 border-slate-600 rounded-xl p-4 flex flex-col items-center transition-all relative overflow-hidden group" id="box3-container">
+                        <div class="text-6xl mb-3 opacity-30 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">📦</div>
+                        <h4 class="font-bold text-slate-300 text-lg">Sombra 3</h4>
+                        <div class="w-full bg-slate-900 rounded-lg p-2 my-4 border border-slate-700 h-16 flex items-center justify-center relative overflow-hidden shadow-inner">
+                             <span id="ping-result-3" class="font-mono text-xl text-slate-600">-- ms</span>
+                             <div id="wave-anim-3" class="absolute left-[-20px] w-2 h-full bg-cyan-400 opacity-0 rounded-full blur-[2px]"></div>
+                        </div>
+                        <button onclick="scanBox(3, 150)" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2.5 rounded-lg mb-3 transition-colors shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                            <span class="text-lg">📡</span> Lanzar Sonar
+                        </button>
+                        <button onclick="selectBox(3, false, 75)" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white font-bold py-2 rounded-lg transition-colors border border-slate-600">
+                            Es esta sombra
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Caja de Retroalimentación del Rescate -->
+                <div id="rescue-feedback" class="hidden mt-6 text-center p-6 rounded-xl border border-transparent transition-all duration-300 opacity-0 transform translate-y-4 shadow-xl"></div>
+            </section>
+
+            <section class="bg-indigo-900/40 rounded-2xl shadow-xl p-6 md:p-8 border-l-4 border-indigo-500">
+                <h3 class="font-bold text-2xl text-indigo-300 mb-4">Reto Visual: La Limitación del Sensor</h3>
+                <p class="text-slate-300 mb-6 text-lg">
+                    A diferencia de los humanos que tenemos dos ojos para percibir la profundidad, este sensor es como tener un solo ojo que <strong>sólo mide distancias de frente</strong>. 
+                    Si pusieras un cubo frente al sensor, ¿cómo crees que lo "vería" el robot? <strong>Haz clic en tu respuesta.</strong>
                 </p>
-                <div class="flex flex-col sm:flex-row items-center gap-6 mb-4 bg-slate-800/50 p-4 rounded-lg">
-                    <img src="images/reto-ciclope.png" alt="Ilustración de dos estudiantes haciendo el experimento de visión" class="w-32 h-32 sm:w-40 sm:h-40 rounded-lg object-cover border-2 border-teal-600 shadow-lg" onerror="this.onerror=null;this.src='https://placehold.co/400x400/1e293b/ffffff?text=Error+en+images/reto-ciclope.png';">
-                    <div>
-                        <h4 class="font-bold text-teal-200 text-lg">1. El Experimento</h4>
-                        <p class="text-slate-300">Pídele a un compañero que sostenga un lápiz quieto en el aire. Ahora, **cierra un ojo** e intenta tocar la punta con tu dedo en un solo movimiento rápido.</p>
-                    </div>
-                </div>
-                <p class="text-slate-300 text-center text-sm italic">¿Fue más difícil de lo que pensabas? Esa duda para juzgar la profundidad es la gran limitación de un robot con un solo sensor.</p>
-            </div>
 
-            <!-- Actividad Visual Interactiva -->
-            <div class="bg-indigo-900/50 border-l-4 border-indigo-400 p-6 rounded-lg mb-8">
-                <h3 class="font-bold text-xl text-indigo-300 mb-4">Actividad Visual: ¡Tu Turno de ser el Robot!</h3>
-                <p class="text-slate-300 mb-4">Observa el objeto de abajo. Si fueras un robot que solo "ve" con un ojo, sin percepción de profundidad, ¿cuál de los dos dibujos de abajo harías? **¡Haz clic en tu elección!**</p>
-                <div class="text-center mb-6">
-                    <img src="images/cubo-3d.png" alt="Cubo 3D violeta" class="w-24 h-24 mx-auto mb-2" onerror="this.onerror=null;this.src='https://placehold.co/100x100/1e293b/ffffff?text=Error';">
-                    <p class="font-bold">Objeto Real</p>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-center">
-                    <!-- Opción A -->
-                    <div id="optionA" class="option-box cursor-pointer p-4 border-2 border-slate-600 rounded-lg">
-                        <img src="images/cuadrado-2d.png" alt="Cuadrado 2D azul" class="w-32 h-32 mx-auto mb-2" onerror="this.onerror=null;this.src='https://placehold.co/128x128/1e293b/ffffff?text=Error';">
-                        <p class="font-bold">Dibujo A</p>
-                    </div>
-                    <!-- Opción B -->
-                    <div id="optionB" class="option-box cursor-pointer p-4 border-2 border-slate-600 rounded-lg">
-                        <img src="images/cubo-perspectiva.png" alt="Cubo en perspectiva azul" class="w-32 h-32 mx-auto mb-2" onerror="this.onerror=null;this.src='https://placehold.co/128x128/1e293b/ffffff?text=Error';">
-                        <p class="font-bold">Dibujo B</p>
+                <!-- Visualización del Objeto Real -->
+                <div class="text-center mb-10 bg-slate-800/50 p-6 rounded-xl inline-block w-full">
+                    <p class="font-bold text-slate-400 mb-6">El Objeto Real (Frente al Robot)</p>
+                    <div class="scene">
+                        <div class="cube">
+                            <div class="face front">Frente</div>
+                            <div class="face back"></div>
+                            <div class="face right"></div>
+                            <div class="face left"></div>
+                            <div class="face top"></div>
+                            <div class="face bottom"></div>
+                        </div>
                     </div>
                 </div>
-                 <!-- Respuesta (inicialmente oculta) -->
-                 <div id="explanation" class="hidden mt-6 bg-slate-800/50 p-4 rounded-lg">
-                    <h4 id="feedback-title" class="font-bold text-lg"></h4>
-                    <p class="text-slate-300 mt-2">La respuesta correcta es el **Dibujo A**. Un robot con un solo sensor percibe el mundo de forma plana, como una serie de distancias. Le cuesta mucho construir una imagen tridimensional con profundidad, al igual que a ti te costó tocar el lápiz con un ojo cerrado.</p>
-                </div>
-            </div>
 
-            <!-- Reflexión Final sobre Múltiples Sensores -->
-            <div>
-                <h3 class="font-bold text-xl text-cyan-300 mb-4">Reflexión Final: ¿Por qué más es mejor?</h3>
-                <p class="text-slate-300 mb-4">Basado en los experimentos, ¿por qué los coches autónomos más avanzados usan una combinación de **MÚLTIPLES sensores** (cámaras, radares, etc.) en lugar de confiar en uno solo?</p>
-                <img src="images/coche-sensores.png" alt="Diagrama de los múltiples sensores de un coche autónomo" class="w-full h-auto rounded-lg object-cover border-2 border-cyan-700" onerror="this.onerror=null;this.src='https://placehold.co/600x300/1e293b/ffffff?text=Error en images/coche-sensores.png';">
-            </div>
+                <!-- Opciones Interactivas -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
+                    
+                    <!-- Opción A (Correcta) -->
+                    <div id="optionA" class="option-box cursor-pointer p-6 bg-slate-800 border-2 border-slate-600 rounded-xl relative group">
+                        <div class="absolute inset-0 bg-indigo-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        
+                        <!-- Dibujo 2D (Plano) creado con CSS -->
+                        <div class="w-24 h-24 bg-cyan-500 mx-auto mb-4 border-2 border-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.6)] flex items-center justify-center relative z-10">
+                            <span class="text-cyan-900 font-bold">15 cm</span>
+                        </div>
+                        
+                        <h4 class="font-bold text-xl text-white relative z-10">Opción A</h4>
+                        <p class="text-sm text-slate-400 mt-2 relative z-10">Una superficie plana detectada a una sola distancia.</p>
+                    </div>
+
+                    <!-- Opción B (Incorrecta) -->
+                    <div id="optionB" class="option-box cursor-pointer p-6 bg-slate-800 border-2 border-slate-600 rounded-xl relative group">
+                        <div class="absolute inset-0 bg-indigo-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        
+                        <!-- Dibujo 3D estático (Perspectiva) creado con CSS -->
+                        <div class="scene mb-4 relative z-10 scale-75">
+                            <div class="cube cube-static">
+                                <div class="face front bg-emerald-500/80 border-emerald-300"></div>
+                                <div class="face right bg-emerald-700/80 border-emerald-400"></div>
+                                <div class="face top bg-emerald-400/80 border-emerald-200"></div>
+                            </div>
+                        </div>
+                        
+                        <h4 class="font-bold text-xl text-white relative z-10">Opción B</h4>
+                        <p class="text-sm text-slate-400 mt-2 relative z-10">Un objeto tridimensional con profundidad y caras laterales.</p>
+                    </div>
+                </div>
+
+                 <!-- Caja de Retroalimentación (Oculta al inicio) -->
+                 <div id="explanation" class="hidden mt-8 bg-slate-800/80 border border-slate-600 p-6 rounded-xl transition-all duration-500 opacity-0 transform translate-y-4">
+                    <div class="flex items-start gap-4">
+                        <div id="feedback-icon" class="text-3xl"></div>
+                        <div>
+                            <h4 id="feedback-title" class="font-bold text-xl mb-2"></h4>
+                            <p id="feedback-text" class="text-slate-300 leading-relaxed"></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
         </main>
         
-        <!-- Pie de página -->
-        <footer class="text-center mt-8 text-slate-500 text-sm">
-            <p>Misión Sensores 🤖</p>
+        <footer class="text-center mt-12 mb-6 text-slate-500 text-sm font-medium">
+            <a href="index.html" class="inline-block px-6 py-2 bg-slate-800 hover:bg-slate-700 rounded-full transition-colors mb-4 border border-slate-700">
+                ← Volver al Menú Principal
+            </a>
+            <p>Misión Sensores 🤖 • Estación 1</p>
         </footer>
     </div>
 
     <script>
-        // --- Lógica para la actividad visual interactiva ---
+        // --- LÓGICA DEL SIMULADOR ULTRASÓNICO ---
+        const slider = document.getElementById('obstacle-slider');
+        const obstacle = document.getElementById('obstacle');
+        const btnPing = document.getElementById('btn-ping');
+        const wave = document.getElementById('sonar-wave');
+        const distanceDisplay = document.getElementById('distance-display');
+        const timeDisplay = document.getElementById('time-display');
+        const statusDisplay = document.getElementById('status-display');
+
+        let isScanning = false;
+        let timerInterval;
+
+        // Actualizar posición del obstáculo en tiempo real
+        slider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            obstacle.style.left = `${val}%`;
+            if(!isScanning) {
+                distanceDisplay.textContent = "-- cm";
+                timeDisplay.textContent = "0.00 ms";
+                statusDisplay.textContent = "Sensor en espera...";
+                statusDisplay.className = "text-center text-sm font-semibold text-slate-400 mb-3 h-5 transition-colors";
+            }
+        });
+
+        // Animación de lanzar pulso sónico
+        btnPing.addEventListener('click', () => {
+            if (isScanning) return;
+            isScanning = true;
+            btnPing.classList.remove('radar-ping');
+            btnPing.textContent = "Escaneando...";
+            distanceDisplay.textContent = "...";
+            timeDisplay.textContent = "0.00 ms";
+
+            const targetPercent = slider.value;
+            // Calcular distancia simulada (para darle realismo en cm)
+            const calculatedDist = Math.floor((targetPercent - 20) * 2 + 10);
+            
+            // Hacemos que el tiempo visual de viaje dependa estrictamente de la distancia
+            const tripTimeMs = calculatedDist * 8; // Tiempo de una sola vía
+            
+            // Ajustar la velocidad de la animación CSS dinámicamente
+            wave.style.transition = `left ${tripTimeMs}ms linear, opacity 0.1s`;
+
+            // Iniciar cronómetro visual para demostrar que mide tiempo
+            let startTime = Date.now();
+            timerInterval = setInterval(() => {
+                let elapsed = Date.now() - startTime;
+                timeDisplay.textContent = (elapsed * 0.1).toFixed(2) + " ms";
+            }, 20);
+            
+            // 1. Mostrar onda y enviarla hacia adelante (IDA)
+            statusDisplay.textContent = "🔊 Onda emitida (Viajando de ida)...";
+            statusDisplay.className = "text-center text-sm font-semibold text-cyan-400 mb-3 h-5 transition-colors";
+            
+            wave.style.opacity = '1';
+            wave.style.transform = 'scaleX(1)'; // La curva mira hacia adelante
+            wave.style.borderColor = '#22d3ee'; // cyan-400
+            wave.style.left = `calc(${targetPercent}% - 10px)`;
+            
+            // 2. Cuando llega al obstáculo, rebotar
+            setTimeout(() => {
+                // Efecto de choque visual en el obstáculo
+                obstacle.style.transform = 'scale(1.05) translateX(2px)';
+                setTimeout(() => obstacle.style.transform = 'none', 100);
+                
+                statusDisplay.textContent = "↩️ ¡Rebote! (Eco regresando)...";
+                statusDisplay.className = "text-center text-sm font-semibold text-emerald-400 mb-3 h-5 transition-colors";
+
+                // Invertir onda físicamente para el regreso (VUELTA)
+                wave.style.transform = 'scaleX(-1)'; // Voltea la curva visualmente
+                wave.style.borderColor = '#34d399'; // Cambia a verde esmeralda
+                wave.style.left = '3rem'; // Volver al sensor
+
+                // 3. Cuando la onda regresa al sensor
+                setTimeout(() => {
+                    clearInterval(timerInterval);
+                    wave.style.opacity = '0';
+                    
+                    statusDisplay.innerHTML = `✅ Eco recibido. <strong>Distancia = Tiempo Total / 2</strong>`;
+                    statusDisplay.className = "text-center text-sm font-semibold text-white mb-3 h-5 transition-colors";
+                    
+                    // Asegurar valor final estático y coherente
+                    const totalSimulatedTime = (tripTimeMs * 2 * 0.1).toFixed(2);
+                    timeDisplay.textContent = `${totalSimulatedTime} ms`;
+                    distanceDisplay.textContent = `${calculatedDist} cm`;
+                    
+                    btnPing.classList.add('radar-ping');
+                    btnPing.textContent = "Lanzar Pulso";
+                    isScanning = false;
+                }, tripTimeMs); // Tiempo de regreso
+                
+            }, tripTimeMs); // Tiempo de ida
+        });
+
+        // --- LÓGICA DEL RETO PRÁCTICO (RESCATE EN LA OSCURIDAD) ---
+        let isScanningBox = false;
+
+        window.scanBox = function(boxNum, expectedTime) {
+            if(isScanningBox) return;
+            isScanningBox = true;
+
+            const resultEl = document.getElementById(`ping-result-${boxNum}`);
+            const animEl = document.getElementById(`wave-anim-${boxNum}`);
+            
+            resultEl.textContent = "Escaneando...";
+            resultEl.className = "font-mono text-sm text-cyan-400 animate-pulse font-bold";
+            
+            // Reiniciar estado de animación
+            animEl.style.transition = "none";
+            animEl.style.left = "-20px";
+            animEl.style.opacity = "1";
+            animEl.style.backgroundColor = "#22d3ee"; // Cyan ida
+            
+            // Secuencia de animación de escaneo
+            setTimeout(() => {
+                animEl.style.transition = "left 0.4s ease-in, opacity 0.1s";
+                animEl.style.left = "110%"; // Viaje de Ida
+                
+                setTimeout(() => {
+                    animEl.style.transition = "none";
+                    animEl.style.backgroundColor = "#34d399"; // Verde vuelta (Eco)
+                    
+                    setTimeout(() => {
+                        animEl.style.transition = "left 0.4s ease-out, opacity 0.1s";
+                        animEl.style.left = "-20px"; // Viaje de vuelta
+                        
+                        setTimeout(() => {
+                            animEl.style.opacity = "0";
+                            
+                            // Mostrar resultado final
+                            resultEl.textContent = `${expectedTime} ms`;
+                            resultEl.className = "font-mono text-2xl text-emerald-400 font-bold drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]";
+                            isScanningBox = false;
+                        }, 400); // Duración de vuelta
+                    }, 20); // Pausa breve en el rebote
+                }, 400); // Duración de ida
+            }, 50);
+        };
+
+        window.selectBox = function(boxNum, isCorrect, realDist) {
+            const feedback = document.getElementById('rescue-feedback');
+            const container = document.getElementById(`box${boxNum}-container`);
+            
+            feedback.classList.remove('hidden');
+            setTimeout(() => {
+                feedback.classList.remove('opacity-0', 'translate-y-4');
+                feedback.classList.add('opacity-100', 'translate-y-0');
+            }, 50);
+            
+            if(isCorrect) {
+                // Éxito
+                feedback.className = "mt-6 text-center p-6 rounded-xl border bg-emerald-900/40 border-emerald-500 transition-all duration-300 opacity-100 translate-y-0 shadow-[0_0_20px_rgba(16,185,129,0.3)]";
+                feedback.innerHTML = `
+                    <div class="text-4xl mb-3">🔋✅</div>
+                    <h4 class="text-2xl font-black text-emerald-400 mb-2">¡Batería Encontrada!</h4>
+                    <p class="text-emerald-100 text-lg">¡Lógica perfecta! Si el objeto está a 40cm, la onda sónica debió viajar <strong>40cm para ir y 40cm para volver</strong>. Esto da un total de 80cm de recorrido, es decir, <strong>80 ms en total</strong>. ¡Has dominado el sensor!</p>
+                `;
+                container.classList.add('pulse-success');
+                // Ocultar sombra, mostrar batería
+                container.querySelector('.text-6xl').textContent = "🔋";
+                container.querySelector('.text-6xl').classList.remove('opacity-30');
+            } else {
+                // Error
+                feedback.className = "mt-6 text-center p-6 rounded-xl border bg-rose-900/40 border-rose-500 transition-all duration-300 opacity-100 translate-y-0";
+                feedback.innerHTML = `
+                    <div class="text-4xl mb-3">💥❌</div>
+                    <h4 class="text-2xl font-black text-rose-400 mb-2">¡Objeto Equivocado!</h4>
+                    <p class="text-rose-100 text-lg">Esa sombra está a <strong>${realDist} cm</strong> de distancia. Recuerda la fórmula: <strong class="bg-rose-950 px-2 py-1 rounded">Distancia = Tiempo Total / 2</strong>. ¡Vuelve a escanear las cajas e inténtalo de nuevo!</p>
+                `;
+                container.classList.add('shake-error');
+                setTimeout(() => {
+                    container.classList.remove('shake-error');
+                }, 500);
+            }
+        };
+
+        // --- LÓGICA DEL RETO VISUAL (OPCIONES A y B) ---
         const optionA = document.getElementById('optionA');
         const optionB = document.getElementById('optionB');
         const explanation = document.getElementById('explanation');
         const feedbackTitle = document.getElementById('feedback-title');
+        const feedbackText = document.getElementById('feedback-text');
+        const feedbackIcon = document.getElementById('feedback-icon');
+        
         let answered = false;
 
-        function handleSelection(isCorrect) {
-            if (answered) return; // Evita que se pueda contestar de nuevo
+        function handleSelection(isCorrect, selectedEl, otherEl) {
+            if (answered) return; 
             answered = true;
 
-            // Muestra la explicación
+            // Deshabilitar botones
+            selectedEl.classList.add('disabled');
+            otherEl.classList.add('disabled');
+            
+            // Mostrar panel de explicación con animación
             explanation.classList.remove('hidden');
+            // Pequeño delay para que la transición CSS funcione al quitar 'hidden'
+            setTimeout(() => {
+                explanation.classList.remove('opacity-0', 'translate-y-4');
+                explanation.classList.add('opacity-100', 'translate-y-0');
+            }, 50);
 
             if (isCorrect) {
-                feedbackTitle.textContent = '¡Correcto! ✅';
-                feedbackTitle.className = 'font-bold text-lg text-green-400';
-                optionA.classList.add('border-green-500', 'border-4');
-                optionB.classList.add('opacity-50');
+                // ACERTO (Opción A)
+                selectedEl.classList.add('pulse-success');
+                otherEl.style.opacity = '0.3';
+                
+                feedbackIcon.textContent = '✅';
+                feedbackTitle.textContent = '¡Correcto! Excelente deducción.';
+                feedbackTitle.className = 'font-bold text-xl mb-2 text-green-400';
+                feedbackText.innerHTML = 'El sensor ultrasónico solo lanza un rayo hacia adelante. Al chocar con la pared del cubo, lo único que el robot registra es <strong>"hay un objeto a 15 cm"</strong>. No puede ver las esquinas, ni la profundidad, ni los colores, por lo que percibe el mundo como un mapa plano de distancias (Opción A).';
+                
+                explanation.classList.add('border-green-500', 'bg-green-900/20');
             } else {
-                feedbackTitle.textContent = '¡Casi! La respuesta correcta es la A 🤔';
-                feedbackTitle.className = 'font-bold text-lg text-yellow-400';
-                optionA.classList.add('border-green-500', 'border-4');
-                optionB.classList.add('border-red-500', 'border-4');
+                // FALLO (Opción B)
+                selectedEl.classList.add('shake-error');
+                otherEl.classList.add('pulse-success'); // Mostrar la correcta
+                
+                feedbackIcon.textContent = '🤖';
+                feedbackTitle.textContent = '¡Casi! Pero los robots no ven como nosotros.';
+                feedbackTitle.className = 'font-bold text-xl mb-2 text-amber-400';
+                feedbackText.innerHTML = 'Te dejaste engañar por tu cerebro humano. Nosotros vemos el cubo en 3D (Opción B) porque nuestros dos ojos calculan la profundidad. El sensor ultrasónico solo lanza sonido de frente; si choca con la primera cara del cubo, cree que es solo una pared plana a cierta distancia. <strong>La respuesta correcta era la A</strong>.';
+                
+                explanation.classList.add('border-amber-500', 'bg-amber-900/20');
             }
-
-            // Quita la interactividad de las opciones
-            optionA.classList.remove('cursor-pointer', 'option-box');
-            optionB.classList.remove('cursor-pointer', 'option-box');
-            optionA.style.transform = 'none';
-            optionB.style.transform = 'none';
         }
 
-        optionA.addEventListener('click', () => handleSelection(true));
-        optionB.addEventListener('click', () => handleSelection(false));
-    </script>
+        optionA.addEventListener('click', () => handleSelection(true, optionA, optionB));
+        optionB.addEventListener('click', () => handleSelection(false, optionB, optionA));
 
+    </script>
 </body>
 </html>
-

@@ -4,150 +4,469 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estación 4: Los Oídos del Robot</title>
-    <!-- Carga de Tailwind CSS para los estilos -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Carga de la fuente Inter de Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
     <style>
         body { 
             font-family: 'Inter', sans-serif; 
+            user-select: none;
         }
-        /* Estilo para el botón de reacción */
-        #reaction-button.waiting {
+
+        /* --- Animaciones del Ecualizador de Sonido --- */
+        .eq-bar {
+            width: 8px;
             background-color: #f97316; /* orange-500 */
-            cursor: pointer;
+            border-radius: 9999px;
+            animation: equalize 1s ease-in-out infinite alternate;
+            transform-origin: bottom;
         }
-        #reaction-button.clicked {
-            background-color: #4ade80; /* green-400 */
-            cursor: default;
+        
+        @keyframes equalize {
+            0% { transform: scaleY(0.2); opacity: 0.5; }
+            100% { transform: scaleY(1); opacity: 1; }
         }
-        #reaction-button.too-soon {
-            background-color: #f87171; /* red-400 */
-            cursor: default;
+
+        /* Tiempos de retraso para que las barras se muevan desordenadas */
+        .eq-bar:nth-child(1) { animation-delay: 0.0s; animation-duration: 0.6s; }
+        .eq-bar:nth-child(2) { animation-delay: 0.2s; animation-duration: 0.8s; }
+        .eq-bar:nth-child(3) { animation-delay: 0.4s; animation-duration: 0.5s; }
+        .eq-bar:nth-child(4) { animation-delay: 0.1s; animation-duration: 0.9s; }
+        .eq-bar:nth-child(5) { animation-delay: 0.5s; animation-duration: 0.7s; }
+        .eq-bar:nth-child(6) { animation-delay: 0.3s; animation-duration: 0.6s; }
+        .eq-bar:nth-child(7) { animation-delay: 0.6s; animation-duration: 0.8s; }
+
+        /* Estados del ecualizador (Silencio vs Activo vs Alerta) */
+        .eq-silent .eq-bar {
+            animation: none;
+            transform: scaleY(0.1);
+            background-color: #475569; /* slate-600 */
+        }
+        .eq-alert .eq-bar {
+            background-color: #ef4444 !important; /* red-500 */
+            animation-duration: 0.3s !important;
+            box-shadow: 0 0 10px #ef4444;
+        }
+
+        /* --- Animación de vibración --- */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+        .shake-effect {
+            animation: shake 0.4s ease-in-out;
+        }
+        
+        /* Luz de estado del robot */
+        .robot-eye {
+            transition: all 0.3s ease;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+        }
+        .robot-eye.awake {
+            background-color: #f97316;
+            box-shadow: 0 0 20px #f97316, inset 0 0 5px rgba(255,255,255,0.8);
         }
     </style>
 </head>
 <body class="bg-slate-900 text-white antialiased">
 
-    <!-- Contenedor principal -->
-    <div class="container mx-auto p-6 max-w-2xl">
+    <div class="container mx-auto p-6 max-w-3xl">
         
-        <!-- Encabezado de la estación -->
         <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-black text-orange-400">ESTACIÓN 4</h1>
+            <h1 class="text-3xl md:text-4xl font-black text-orange-500 tracking-wider">ESTACIÓN 4</h1>
             <h2 class="text-2xl md:text-3xl font-bold mt-2">Los Oídos del Robot</h2>
         </header>
 
-        <!-- Tarjeta de contenido principal -->
-        <main class="bg-slate-800 rounded-2xl shadow-lg p-6 md:p-8">
+        <main class="space-y-8">
             
-            <!-- Texto explicativo -->
-            <div class="mb-6">
-                <p class="text-lg leading-relaxed text-slate-300">
-                    ¡Activación finalizada! Has conectado el <strong class="font-bold text-orange-400">sensor de sonido</strong>. Este es el oído del robot, permitiéndole reaccionar a comandos de voz, alarmas o ruidos específicos en su entorno. La velocidad de reacción es clave. ¿Qué tan rápido puedes reaccionar tú?
-                </p>
-            </div>
+            <!-- 1. SIMULADOR DE UMBRAL DE VOLUMEN -->
+            <section class="bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-700">
+                <div class="p-6 md:p-8">
+                    <h3 class="text-2xl font-bold text-orange-400 mb-4 flex items-center">
+                        <span class="text-3xl mr-3">🎙️</span>
+                        Simulador: Umbral de Ruido
+                    </h3>
+                    <p class="text-lg leading-relaxed text-slate-300 mb-6">
+                        Para un robot, el sonido inicial no son palabras, es solo <strong>energía y volumen</strong>. Los ingenieros programan un "Umbral" (un límite). Si el sonido supera ese límite (como un aplauso fuerte), el robot se despierta. Si no, lo ignora.
+                        <br><br><strong>Reto:</strong> Eres el sonido. Toca el botón naranja repetidamente lo más rápido que puedas para subir el volumen y despertar al robot.
+                    </p>
 
-            <!-- Mini-juego de reacción al sonido -->
-            <div class="bg-slate-900 rounded-lg p-4 border-2 border-slate-700">
-                <h3 class="text-xl font-bold text-orange-300 mb-2">Reto de Reacción Sónica</h3>
-                <p class="text-sm text-slate-400 mb-4 px-1">Presiona "Preparar Sensor". Cuando el área de juego se ilumine, ¡presiona el botón naranja lo más rápido posible!</p>
-                
-                <!-- El área del juego -->
-                <div id="game-area" class="relative w-full h-48 bg-black/50 rounded-md border border-slate-600 flex justify-center items-center transition-colors duration-200">
-                    <span id="game-message" class="text-slate-300 text-center p-4 font-semibold text-2xl">--- ms</span>
+                    <div class="bg-slate-900 p-6 rounded-xl border-2 border-slate-700 shadow-inner">
+                        
+                        <div class="flex flex-col md:flex-row gap-6 items-center">
+                            <!-- Visualizador de Robot -->
+                            <div class="w-full md:w-1/3 flex flex-col items-center">
+                                <div class="bg-slate-700 w-24 h-24 rounded-2xl border-4 border-slate-600 flex items-center justify-center mb-3 shadow-lg relative">
+                                    <!-- Ojo del robot -->
+                                    <div id="robot-eye" class="robot-eye w-16 h-8 bg-slate-900 rounded-full"></div>
+                                </div>
+                                <span id="robot-status" class="font-bold text-slate-500 uppercase tracking-widest text-sm">Dormido</span>
+                            </div>
+
+                            <!-- Medidor de Volumen (Decibeles) -->
+                            <div class="w-full md:w-2/3">
+                                <div class="flex justify-between text-xs text-slate-400 mb-1 font-bold uppercase tracking-wider">
+                                    <span>Silencio</span>
+                                    <span>Umbral (80 dB)</span>
+                                    <span>Max</span>
+                                </div>
+                                <div class="relative w-full h-10 bg-slate-800 rounded-full overflow-hidden border-2 border-slate-600 mb-4 shadow-inner">
+                                    <!-- Línea de Umbral (Target) -->
+                                    <div class="absolute h-full w-1 bg-red-500 z-10" style="left: 80%; box-shadow: 0 0 10px red;"></div>
+                                    
+                                    <!-- Barra de Volumen dinámica -->
+                                    <div id="volume-bar" class="h-full w-0 bg-gradient-to-r from-orange-400 to-red-500 transition-all duration-75 ease-linear"></div>
+                                </div>
+                                
+                                <button id="btn-clap" class="w-full bg-orange-600 hover:bg-orange-500 text-white font-black text-xl py-4 rounded-xl shadow-[0_8px_0_#c2410c] active:shadow-[0_2px_0_#c2410c] active:translate-y-1 transition-all">
+                                    👏 HACER RUIDO (TOCAR RÁPIDO)
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. RETO DE DISCRIMINACIÓN DE SONIDO (GO / NO-GO) -->
+            <section class="bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-700 relative group">
+                <!-- Bloqueo del juego hasta despertar al robot -->
+                <div id="game-lock" class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-30 flex flex-col items-center justify-center transition-opacity duration-500">
+                    <span class="text-5xl mb-4">💤</span>
+                    <h3 class="text-xl font-bold text-slate-300">Robot Apagado</h3>
+                    <p class="text-slate-400 text-sm mt-2">Supera el umbral de ruido arriba para encenderlo.</p>
                 </div>
 
-                <button id="start-button" class="mt-4 w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-lg">
-                    Preparar Sensor
-                </button>
-                <button id="reaction-button" class="mt-2 w-full text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-lg opacity-50 cursor-not-allowed waiting">
-                    ¡Presiona al ver la señal!
-                </button>
-            </div>
+                <div class="p-6 md:p-8">
+                    <div class="flex items-start justify-between mb-4 gap-4">
+                        <div>
+                            <h3 class="font-bold text-2xl text-orange-400 mb-2 flex items-center">
+                                <span class="text-3xl mr-3">🚨</span>
+                                Reto: El Modo Guardián
+                            </h3>
+                            <p class="text-slate-300">
+                                Una vez encendido, el robot debe filtrar el ruido de fondo. Escuchará diferentes sonidos. <strong>Solo presiona la ALARMA cuando el sonido sea de "Pasos de Intruso" (Ondas rojas).</strong> Ignora el viento y los animales.
+                            </p>
+                        </div>
+                    </div>
 
-            <!-- Reflexión Final -->
-            <div class="mt-8 bg-rose-900/50 border-l-4 border-rose-400 p-4 rounded-lg">
-                <h3 class="font-bold text-xl text-rose-300 mb-2">Reflexión: Del Sonido a la Acción</h3>
-                <p class="text-rose-200 leading-relaxed">
-                    Tu tiempo de reacción es el que tardó tu cerebro en procesar la señal visual y enviar la orden a tu mano. Un robot hace algo similar: su micrófono (sensor) capta un sonido, y su procesador decide qué hacer.
+                    <div class="bg-slate-900 rounded-xl p-4 md:p-6 border-2 border-slate-700 shadow-inner">
+                        
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="bg-slate-800 px-4 py-2 rounded-lg border border-slate-600">
+                                <span class="text-xs text-slate-400 uppercase font-bold tracking-wider block">Puntuación</span>
+                                <span id="score" class="font-mono text-2xl text-orange-400 font-bold">0</span>
+                                <span class="text-slate-500">/5</span>
+                            </div>
+                            <button id="btn-start-guard" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-6 rounded-full transition-colors border border-slate-500">
+                                Iniciar Guardia
+                            </button>
+                        </div>
+                        
+                        <!-- Visualizador del Sonido Actual -->
+                        <div id="sound-display" class="relative w-full h-32 bg-slate-950 rounded-lg overflow-hidden border-2 border-slate-600 shadow-[inset_0_0_30px_rgba(0,0,0,0.8)] flex flex-col justify-center items-center mb-6">
+                            
+                            <!-- Ondas de sonido (CSS puro) -->
+                            <div id="equalizer" class="flex gap-2 h-16 items-center eq-silent">
+                                <div class="eq-bar"></div>
+                                <div class="eq-bar"></div>
+                                <div class="eq-bar"></div>
+                                <div class="eq-bar"></div>
+                                <div class="eq-bar"></div>
+                                <div class="eq-bar"></div>
+                                <div class="eq-bar"></div>
+                            </div>
+                            
+                            <!-- Texto del sonido detectado -->
+                            <div id="sound-label" class="mt-4 font-mono font-bold text-slate-500 tracking-widest uppercase text-sm">
+                                Esperando sonidos...
+                            </div>
+                            
+                            <!-- Overlay de Game Over / Win -->
+                            <div id="guard-overlay" class="absolute inset-0 bg-slate-900/90 z-20 flex flex-col justify-center items-center opacity-0 pointer-events-none transition-opacity">
+                                <span id="guard-icon" class="text-4xl mb-2"></span>
+                                <h4 id="guard-msg-title" class="text-xl font-bold mb-1"></h4>
+                                <p id="guard-msg-desc" class="text-sm text-slate-400 px-4 text-center"></p>
+                            </div>
+                        </div>
+
+                        <!-- Botón de Alarma (Reacción) -->
+                        <button id="btn-alarm" disabled class="w-full h-24 bg-red-900/50 text-red-500/50 font-black text-2xl tracking-widest rounded-xl border-4 border-red-900/50 transition-all flex items-center justify-center gap-3">
+                            <span>🚨</span> ACTIVAR ALARMA <span>🚨</span>
+                        </button>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. REFLEXIÓN FINAL -->
+            <section class="bg-orange-900/40 rounded-2xl shadow-xl p-6 md:p-8 border-l-4 border-orange-500">
+                <h3 class="font-bold text-2xl text-orange-300 mb-2 flex items-center">
+                    <span class="mr-2">🧠</span> Reflexión Final: Inteligencia Artificial
+                </h3>
+                <p class="text-orange-100 leading-relaxed text-lg">
+                    Has visto que el robot puede detectar ruido e identificar ciertos patrones (como pasos). Pero, ¿qué pasa con los asistentes de voz como Siri o Alexa?
                     <br><br>
-                    Piensa en un asistente de voz como Alexa o Siri. ¿Por qué es crucial que reaccione casi instantáneamente a la palabra de activación ("Oye Siri") pero ignore el resto de la conversación?
+                    El sensor (micrófono) solo capta la onda de sonido, pero se necesita un poderoso <strong>cerebro (Inteligencia Artificial)</strong> para traducir esa onda en palabras, entender el idioma, y responder a preguntas complejas. ¡El sensor capta, pero el procesador entiende!
                 </p>
-            </div>
+            </section>
 
         </main>
         
-        <footer class="text-center mt-8 text-slate-500 text-sm">
-            <p>Misión Sensores 🤖</p>
+        <footer class="text-center mt-12 mb-6 text-slate-500 text-sm font-medium">
+            <a href="index.html" class="inline-block px-6 py-2 bg-slate-800 hover:bg-slate-700 rounded-full transition-colors mb-4 border border-slate-700">
+                ← Volver al Menú Principal
+            </a>
+            <p>Misión Sensores 🤖 • Estación 4</p>
         </footer>
     </div>
 
     <script>
-        // --- Lógica del Juego de Reacción ---
-        const startButton = document.getElementById('start-button');
-        const reactionButton = document.getElementById('reaction-button');
-        const gameArea = document.getElementById('game-area');
-        const gameMessage = document.getElementById('game-message');
+        // ==========================================
+        // 1. LÓGICA DEL SIMULADOR DE UMBRAL DE RUIDO
+        // ==========================================
+        
+        const btnClap = document.getElementById('btn-clap');
+        const volBar = document.getElementById('volume-bar');
+        const robotEye = document.getElementById('robot-eye');
+        const robotStatus = document.getElementById('robot-status');
+        const gameLock = document.getElementById('game-lock');
 
-        let startTime;
-        let timeoutId;
-        let waitingForClick = false;
+        let volume = 0;
+        let isAwake = false;
+        const THRESHOLD = 80;
 
-        startButton.addEventListener('click', prepareGame);
-        reactionButton.addEventListener('click', handleReaction);
+        // Bucle continuo para disminuir el volumen (decaimiento)
+        setInterval(() => {
+            if (volume > 0) {
+                // Disminuye más rápido si el volumen es alto para hacerlo más desafiante
+                volume -= (volume > 50) ? 2.5 : 1.5; 
+                if (volume < 0) volume = 0;
+                updateVolumeUI();
+            }
+        }, 50);
 
-        function prepareGame() {
-            startButton.disabled = true;
-            startButton.classList.add('opacity-50');
-            gameMessage.textContent = "Espera la señal...";
-            gameArea.classList.remove('bg-green-500/50');
-            reactionButton.classList.remove('too-soon', 'clicked');
-            reactionButton.classList.add('waiting', 'opacity-50', 'cursor-not-allowed');
-            waitingForClick = false;
+        // Aumentar volumen al tocar
+        const addNoise = (e) => {
+            if(e) e.preventDefault(); // Evitar zoom/scroll en móviles
+            if(isAwake) return; // Ya terminó esta parte
 
-            // Tiempo de espera aleatorio antes de mostrar la señal
-            const randomDelay = Math.random() * 4000 + 1000; // Entre 1 y 5 segundos
-            timeoutId = setTimeout(showSignal, randomDelay);
-        }
+            volume += 18; // Cuánto sube por cada toque
+            if (volume > 100) volume = 100;
+            
+            updateVolumeUI();
+            checkThreshold();
+        };
 
-        function showSignal() {
-            gameArea.classList.add('bg-green-500/50');
-            reactionButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            startTime = Date.now();
-            waitingForClick = true;
-        }
+        btnClap.addEventListener('mousedown', addNoise);
+        btnClap.addEventListener('touchstart', addNoise, {passive: false});
 
-        function handleReaction() {
-            if (!startTime) return; // Si el juego no ha empezado
-
-            if (!waitingForClick) {
-                // El jugador hizo clic demasiado pronto
-                clearTimeout(timeoutId);
-                gameMessage.textContent = "¡Demasiado pronto!";
-                reactionButton.classList.add('too-soon');
-                resetGame();
+        function updateVolumeUI() {
+            volBar.style.width = `${volume}%`;
+            
+            // Cambiar color de la barra según intensidad
+            if(volume < 40) {
+                volBar.className = "h-full bg-green-500 transition-all duration-75 ease-linear";
+            } else if (volume < THRESHOLD) {
+                volBar.className = "h-full bg-orange-400 transition-all duration-75 ease-linear";
             } else {
-                // El jugador hizo clic a tiempo
-                const endTime = Date.now();
-                const reactionTime = endTime - startTime;
-                gameMessage.textContent = `${reactionTime} ms`;
-                reactionButton.classList.add('clicked');
-                waitingForClick = false;
-                resetGame();
+                volBar.className = "h-full bg-red-500 transition-all duration-75 ease-linear shadow-[0_0_15px_red]";
             }
         }
 
-        function resetGame() {
-            startTime = null;
-            setTimeout(() => {
-                startButton.disabled = false;
-                startButton.classList.remove('opacity-50');
-            }, 1500);
+        function checkThreshold() {
+            if (volume >= THRESHOLD && !isAwake) {
+                isAwake = true;
+                
+                // Efectos visuales de encendido
+                robotEye.classList.add('awake');
+                robotStatus.textContent = "EN LÍNEA";
+                robotStatus.classList.replace('text-slate-500', 'text-orange-400');
+                btnClap.textContent = "ROBOT DESPIERTO";
+                btnClap.classList.add('bg-slate-700', 'pointer-events-none', 'text-slate-400');
+                btnClap.classList.remove('bg-orange-600', 'hover:bg-orange-500', 'text-white');
+                btnClap.style.boxShadow = "none";
+                
+                // Desbloquear el juego 2
+                setTimeout(() => {
+                    gameLock.classList.add('opacity-0');
+                    setTimeout(() => gameLock.classList.add('hidden'), 500);
+                }, 1000);
+            }
+        }
+
+
+        // ==========================================
+        // 2. LÓGICA DEL JUEGO DE DISCRIMINACIÓN (GUARDIÁN)
+        // ==========================================
+
+        const btnStartGuard = document.getElementById('btn-start-guard');
+        const btnAlarm = document.getElementById('btn-alarm');
+        const equalizer = document.getElementById('equalizer');
+        const soundLabel = document.getElementById('sound-label');
+        const scoreDisplay = document.getElementById('score');
+        const soundDisplayContainer = document.getElementById('sound-display');
+        
+        const guardOverlay = document.getElementById('guard-overlay');
+        const guardIcon = document.getElementById('guard-icon');
+        const guardMsgTitle = document.getElementById('guard-msg-title');
+        const guardMsgDesc = document.getElementById('guard-msg-desc');
+
+        let guardScore = 0;
+        let isGuarding = false;
+        let currentEventTimeout = null;
+        let reactionTimeout = null;
+        let currentSoundType = 'none'; // 'noise' o 'target'
+
+        // Tipos de sonidos
+        const sounds = [
+            { type: 'noise', text: '🍃 Viento fuerte', emoji: '🍃', color: 'orange' },
+            { type: 'noise', text: '🐈 Gato maullando', emoji: '🐈', color: 'orange' },
+            { type: 'noise', text: '🚗 Coche lejano', emoji: '🚗', color: 'orange' },
+            { type: 'target', text: '👞 ¡PASOS DETECTADOS!', emoji: '🚨', color: 'red' }
+        ];
+
+        btnStartGuard.addEventListener('click', startGuardSequence);
+
+        function startGuardSequence() {
+            guardScore = 0;
+            scoreDisplay.textContent = guardScore;
+            isGuarding = true;
+            
+            btnStartGuard.classList.add('hidden');
+            guardOverlay.classList.add('opacity-0', 'pointer-events-none');
+            
+            // Habilitar botón de alarma visualmente
+            btnAlarm.disabled = false;
+            btnAlarm.className = "w-full h-24 bg-red-600 hover:bg-red-500 text-white font-black text-2xl tracking-widest rounded-xl shadow-[0_8px_0_#7f1d1d] active:shadow-[0_2px_0_#7f1d1d] active:translate-y-2 transition-all flex items-center justify-center gap-3 cursor-pointer";
+
+            nextGuardEvent();
+        }
+
+        function nextGuardEvent() {
+            if (!isGuarding) return;
+
+            if (guardScore >= 5) {
+                endGuardGame(true, "¡Zona Asegurada!", "Detectaste a todos los intrusos sin generar falsas alarmas. ¡Gran trabajo de filtrado!");
+                return;
+            }
+
+            // Estado de silencio
+            equalizer.className = "flex gap-2 h-16 items-center eq-silent";
+            soundLabel.textContent = "Silencio... escuchando.";
+            soundLabel.className = "mt-4 font-mono font-bold text-slate-500 tracking-widest uppercase text-sm";
+            currentSoundType = 'none';
+
+            // Programar siguiente sonido aleatorio (1 a 3 segundos de espera)
+            const waitTime = Math.random() * 2000 + 1000;
+            currentEventTimeout = setTimeout(playRandomSound, waitTime);
+        }
+
+        function playRandomSound() {
+            if (!isGuarding) return;
+
+            // Seleccionar sonido aleatorio (35% probabilidad de que sea intruso)
+            const isTarget = Math.random() < 0.35;
+            let soundObj;
+            
+            if (isTarget) {
+                soundObj = sounds.find(s => s.type === 'target');
+            } else {
+                const noises = sounds.filter(s => s.type === 'noise');
+                soundObj = noises[Math.floor(Math.random() * noises.length)];
+            }
+
+            currentSoundType = soundObj.type;
+
+            // Actualizar UI para mostrar el sonido
+            soundLabel.innerHTML = `${soundObj.emoji} ${soundObj.text}`;
+            
+            if (soundObj.type === 'target') {
+                equalizer.className = "flex gap-2 h-16 items-center eq-alert";
+                soundLabel.className = "mt-4 font-mono font-black text-red-500 tracking-widest uppercase text-sm animate-pulse";
+                
+                // Si es el target, el jugador tiene 1.2 segundos para reaccionar
+                reactionTimeout = setTimeout(() => {
+                    if (isGuarding && currentSoundType === 'target') {
+                        // El jugador no presionó a tiempo
+                        endGuardGame(false, "¡Se escapó el intruso!", "El robot escuchó los pasos pero no activaste la alarma a tiempo.");
+                    }
+                }, 1200);
+
+            } else {
+                equalizer.className = "flex gap-2 h-16 items-center"; // Activo pero color normal (naranja por CSS base)
+                soundLabel.className = "mt-4 font-mono font-bold text-orange-400 tracking-widest uppercase text-sm";
+                
+                // Si es ruido, dura un poco y vuelve al silencio
+                reactionTimeout = setTimeout(() => {
+                    if (isGuarding && currentSoundType === 'noise') {
+                        nextGuardEvent(); // Pasó el ruido y no hizo nada (lo cual es correcto)
+                    }
+                }, 1500);
+            }
+        }
+
+        // Lógica al presionar el botón de ALARMA
+        const handleAlarm = (e) => {
+            if(e) e.preventDefault();
+            if (!isGuarding || btnAlarm.disabled) return;
+
+            clearTimeout(reactionTimeout);
+            clearTimeout(currentEventTimeout);
+
+            if (currentSoundType === 'target') {
+                // ACERTO: Presionó cuando había intruso
+                guardScore++;
+                scoreDisplay.textContent = guardScore;
+                
+                // Efecto visual de acierto
+                soundDisplayContainer.classList.add('border-green-500');
+                soundLabel.innerHTML = "✅ INTRUSO NEUTRALIZADO";
+                soundLabel.className = "mt-4 font-mono font-black text-green-400 tracking-widest uppercase text-sm";
+                
+                setTimeout(() => {
+                    soundDisplayContainer.classList.remove('border-green-500');
+                    nextGuardEvent();
+                }, 1000);
+
+            } else if (currentSoundType === 'noise' || currentSoundType === 'none') {
+                // FALLO: Falsa alarma
+                endGuardGame(false, "Falsa Alarma", "Activaste la sirena por error. ¡El robot confundió el viento o un animal con un intruso!");
+                
+                soundDisplayContainer.classList.add('shake-effect');
+                setTimeout(() => soundDisplayContainer.classList.remove('shake-effect'), 500);
+            }
+        };
+
+        btnAlarm.addEventListener('mousedown', handleAlarm);
+        btnAlarm.addEventListener('touchstart', handleAlarm, {passive: false});
+
+        function endGuardGame(won, title, desc) {
+            isGuarding = false;
+            clearTimeout(currentEventTimeout);
+            clearTimeout(reactionTimeout);
+            
+            equalizer.className = "flex gap-2 h-16 items-center eq-silent";
+            
+            // Deshabilitar botón
+            btnAlarm.disabled = true;
+            btnAlarm.className = "w-full h-24 bg-red-900/50 text-red-500/50 font-black text-2xl tracking-widest rounded-xl border-4 border-red-900/50 transition-all flex items-center justify-center gap-3";
+
+            // Mostrar UI final
+            guardIcon.textContent = won ? '🏆' : '❌';
+            guardMsgTitle.textContent = title;
+            guardMsgTitle.className = `text-xl font-bold mb-1 ${won ? 'text-green-400' : 'text-red-400'}`;
+            guardMsgDesc.textContent = desc;
+
+            guardOverlay.classList.remove('opacity-0', 'pointer-events-none');
+            
+            btnStartGuard.classList.remove('hidden');
+            btnStartGuard.textContent = "Reiniciar Guardia";
         }
     </script>
-
 </body>
 </html>

@@ -4,128 +4,356 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estación 2: El Tacto del Robot</title>
-    <!-- Carga de Tailwind CSS para los estilos -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Carga de la fuente Inter de Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
     <style>
-        /* Estilos personalizados para el juego */
         body { 
             font-family: 'Inter', sans-serif; 
+            user-select: none; /* Evita que el texto se seleccione al jugar */
         }
+        
+        /* Animaciones para el simulador de presión */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+        .shake-obj { animation: shake 0.4s ease-in-out; }
+        .crushed { transform: scaleY(0.4) scaleX(1.2); opacity: 0.8; transition: all 0.2s; filter: grayscale(50%) brightness(0.5); }
+        .dropped { transform: translateY(50px) rotate(20deg); opacity: 0; transition: all 0.5s; }
+        .success-lift { transform: translateY(-20px); filter: drop-shadow(0 10px 15px rgba(74, 222, 128, 0.4)); transition: all 0.5s; }
+
+        /* Estilos para el juego de reflejos (Círculos) */
         .target {
             position: absolute;
-            width: 55px;
-            height: 55px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             cursor: pointer;
-            transition: transform 0.1s ease-out, box-shadow 0.2s;
-            border: 2px solid rgba(255, 255, 255, 0.5);
+            transition: transform 0.1s ease-out, box-shadow 0.2s, opacity 0.2s;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            transform: scale(0);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes popIn {
+            to { transform: scale(1); }
         }
         .target:active {
-            transform: scale(0.9);
+            transform: scale(0.85) !important;
         }
         .green-target {
-            background-color: #4ade80; /* green-400 */
-            box-shadow: 0 0 15px rgba(74, 222, 128, 0.7);
+            background: radial-gradient(circle, #4ade80 20%, #16a34a 100%);
+            box-shadow: 0 0 15px rgba(74, 222, 128, 0.7), inset 0 0 10px rgba(255,255,255,0.5);
         }
         .red-target {
-            background-color: #f87171; /* red-400 */
-            box-shadow: 0 0 15px rgba(248, 113, 113, 0.7);
+            background: radial-gradient(circle, #f87171 20%, #dc2626 100%);
+            box-shadow: 0 0 15px rgba(248, 113, 113, 0.7), inset 0 0 10px rgba(255,255,255,0.5);
+        }
+        .hit-effect {
+            animation: pulse-hit 0.3s ease-out;
+        }
+        @keyframes pulse-hit {
+            0% { box-shadow: inset 0 0 0px rgba(255,255,255,0); }
+            50% { box-shadow: inset 0 0 30px rgba(255,255,255,0.8); }
+            100% { box-shadow: inset 0 0 0px rgba(255,255,255,0); }
         }
     </style>
 </head>
 <body class="bg-slate-900 text-white antialiased">
 
-    <!-- Contenedor principal -->
-    <div class="container mx-auto p-6 max-w-2xl">
+    <div class="container mx-auto p-6 max-w-3xl">
         
-        <!-- Encabezado de la estación -->
         <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-black text-green-400">ESTACIÓN 2</h1>
+            <h1 class="text-3xl md:text-4xl font-black text-green-400 tracking-wider">ESTACIÓN 2</h1>
             <h2 class="text-2xl md:text-3xl font-bold mt-2">El Tacto del Robot</h2>
         </header>
 
-        <!-- Tarjeta de contenido principal -->
-        <main class="bg-slate-800 rounded-2xl shadow-lg p-6 md:p-8">
+        <main class="space-y-8">
             
-            <!-- Texto explicativo -->
-            <div class="mb-6">
-                <p class="text-lg leading-relaxed text-slate-300">
-                    Tu celular usa un sensor táctil para <strong class="font-bold text-green-400">discriminar</strong> dónde tocas. Un robot hace lo mismo para manipular objetos. ¡Acepta el reto!
-                </p>
-            </div>
+            <section class="bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-700">
+                <div class="p-6 md:p-8">
+                    <h3 class="text-2xl font-bold text-green-300 mb-4 flex items-center">
+                        <span class="text-3xl mr-3">🦾</span>
+                        Simulador: Control de Fuerza
+                    </h3>
+                    <p class="text-lg leading-relaxed text-slate-300 mb-6">
+                        El sentido del tacto no solo detecta <strong>"si"</strong> tocamos algo, sino con <strong>cuánta fuerza</strong> lo hacemos (presión). Un robot usa sensores de fuerza para saber si está aplastando un objeto frágil o si lo está dejando caer.
+                        <br><br><strong>Reto:</strong> Selecciona un objeto. <strong>Mantén presionado el botón verde</strong> para aumentar la fuerza de la pinza y <strong>suéltalo</strong> cuando la barra esté en la "Zona Segura".
+                    </p>
 
-            <!-- Mini-juego interactivo -->
-            <div class="bg-slate-900 rounded-lg p-4 border-2 border-slate-700">
-                <div class="flex justify-between items-center mb-2">
-                    <h3 class="text-xl font-bold text-green-300">Reto Táctil Avanzado</h3>
-                    <div class="text-right">
-                        <span class="text-slate-400">Puntos:</span>
-                        <span id="score" class="font-bold text-2xl text-white">0</span>
+                    <!-- UI del Simulador de Fuerza -->
+                    <div class="bg-slate-900 p-6 rounded-xl border border-slate-700">
+                        
+                        <!-- Selección de Objetos -->
+                        <div class="grid grid-cols-3 gap-4 mb-6">
+                            <button onclick="selectObject('huevo')" id="btn-huevo" class="flex flex-col items-center p-3 rounded-lg border-2 border-green-500 bg-green-900/30 transition-all">
+                                <div class="text-4xl mb-2" id="icon-huevo">🥚</div>
+                                <span class="text-sm font-bold text-slate-300">Huevo</span>
+                            </button>
+                            <button onclick="selectObject('vaso')" id="btn-vaso" class="flex flex-col items-center p-3 rounded-lg border-2 border-slate-700 bg-slate-800 transition-all hover:bg-slate-700">
+                                <div class="text-4xl mb-2" id="icon-vaso">🥤</div>
+                                <span class="text-sm font-bold text-slate-300">Vaso Cartón</span>
+                            </button>
+                            <button onclick="selectObject('acero')" id="btn-acero" class="flex flex-col items-center p-3 rounded-lg border-2 border-slate-700 bg-slate-800 transition-all hover:bg-slate-700">
+                                <div class="text-4xl mb-2" id="icon-acero">🧱</div>
+                                <span class="text-sm font-bold text-slate-300">Bloque Acero</span>
+                            </button>
+                        </div>
+
+                        <!-- Visor y Medidor -->
+                        <div class="flex flex-col items-center mb-6 relative">
+                            <!-- Visualización del Objeto actual -->
+                            <div class="h-24 flex items-center justify-center mb-4 transition-transform duration-300" id="object-display">
+                                <div class="text-6xl drop-shadow-lg" id="current-object-icon">🥚</div>
+                            </div>
+                            
+                            <!-- Mensaje de estado -->
+                            <div id="force-message" class="text-sm font-bold text-slate-400 mb-2 h-5">Lista para agarrar...</div>
+
+                            <!-- Barra de Presión -->
+                            <div class="w-full h-8 bg-slate-800 rounded-full overflow-hidden border-2 border-slate-600 relative">
+                                <!-- Zonas de destino (se ajustan por JS) -->
+                                <div id="target-zone" class="absolute h-full bg-green-500/30 border-x-2 border-green-400" style="left: 10%; width: 20%;"></div>
+                                
+                                <!-- Barra de llenado dinámica -->
+                                <div id="force-bar" class="h-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-500 w-0 transition-none"></div>
+                            </div>
+                            <div class="w-full flex justify-between text-xs text-slate-500 mt-1 font-mono uppercase font-bold">
+                                <span>Suave</span>
+                                <span>Fuerte</span>
+                            </div>
+                        </div>
+
+                        <!-- Botón de acción (Mantener presionado) -->
+                        <button id="btn-grip" class="w-full bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-xl shadow-lg active:scale-[0.98] transition-transform select-none">
+                            👆 MANTENER PRESIONADO PARA AGARRAR
+                        </button>
                     </div>
                 </div>
-                <p class="text-sm text-slate-400 mb-4 px-1">Toca los verdes (+1), evita los rojos (-1). ¡Consigue 5 puntos antes de que aparezcan 10 círculos verdes!</p>
-                
-                <!-- El área del juego -->
-                <div id="game-area" class="relative w-full h-64 bg-black/50 rounded-md overflow-hidden border border-slate-600 flex justify-center items-center">
-                    <span id="game-message" class="text-slate-300 text-center p-4 font-semibold text-lg">Presiona "Iniciar" para comenzar.</span>
+            </section>
+
+            <section class="bg-slate-800 rounded-2xl shadow-xl p-6 md:p-8 border border-slate-700">
+                <div class="flex items-start justify-between mb-6">
+                    <div>
+                        <h3 class="font-bold text-2xl text-green-300 mb-2 flex items-center">
+                            <span class="text-3xl mr-3">⚡</span>
+                            Reto: Discriminación Táctil
+                        </h3>
+                        <p class="text-slate-300 text-lg">
+                            Además de la fuerza, los sensores identifican qué están tocando. Como una máquina separando frutas maduras de podridas en una cinta.
+                        </p>
+                    </div>
                 </div>
 
-                <button id="start-button" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-lg">
-                    Iniciar Reto
-                </button>
-            </div>
+                <div class="bg-slate-900 rounded-xl p-5 border-2 border-slate-700 shadow-inner">
+                    <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+                        <p class="text-sm text-slate-400 px-1 text-center sm:text-left">
+                            Toca los botones <strong class="text-green-400">Verdes (+1)</strong>. ¡Evita los <strong class="text-red-400">Rojos (-2)</strong>! 
+                            <br>Consigue <strong>10 puntos</strong> para calibrar el sensor.
+                        </p>
+                        <div class="bg-slate-800 px-6 py-2 rounded-lg border border-slate-600 shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]">
+                            <span class="text-slate-400 text-xs uppercase font-bold tracking-wider">Carga Calibrada</span>
+                            <div class="text-3xl font-mono font-bold text-green-400" id="score">0%</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Área del juego de Reflejos -->
+                    <div id="game-area" class="relative w-full h-64 sm:h-72 bg-slate-950 rounded-lg overflow-hidden border-2 border-slate-600 shadow-[inset_0_0_30px_rgba(0,0,0,0.8)]">
+                        <div class="absolute inset-0 opacity-20 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+                        
+                        <!-- Overlay de inicio/fin -->
+                        <div id="game-overlay" class="absolute inset-0 bg-slate-900/90 z-20 flex flex-col justify-center items-center backdrop-blur-sm transition-opacity duration-300">
+                            <div class="text-5xl mb-4" id="overlay-icon">🕹️</div>
+                            <h4 id="game-message" class="text-2xl font-bold text-white mb-2">Panel de Control</h4>
+                            <p class="text-slate-400 mb-6 text-center px-4" id="game-submessage">Prepara tu dedo. Sé rápido y preciso.</p>
+                            <button id="start-button" class="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-full transition-all shadow-[0_0_15px_rgba(22,163,74,0.5)] active:scale-95">
+                                Iniciar Calibración
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-            <!-- Reflexión Final -->
-            <div class="mt-8 bg-sky-900/50 border-l-4 border-sky-400 p-4 rounded-lg">
-                <h3 class="font-bold text-xl text-sky-300 mb-2">Reflexión: Tu Piel, el Sensor Inteligente</h3>
-                <p class="text-sky-200 leading-relaxed">
-                    En el reto, no bastaba con tocar, tenías que <strong class="font-bold">identificar y decidir</strong>. Un robot cirujano, por ejemplo, usa sensores táctiles para diferenciar entre tejido sano y un tumor.
+            <section class="bg-sky-900/40 rounded-2xl shadow-xl p-6 md:p-8 border-l-4 border-sky-500">
+                <h3 class="font-bold text-2xl text-sky-300 mb-2 flex items-center">
+                    <span class="mr-2">🧠</span> Reflexión Final
+                </h3>
+                <p class="text-sky-100 leading-relaxed text-lg">
+                    Piensa en tu propia mano: tu piel puede sentir la suavidad de una pluma, y tus músculos saben exactamente con cuánta fuerza sostener un vaso lleno de agua sin derramarlo. 
                     <br><br>
-                    Piensa en tu piel: puede sentir la diferencia entre una gota de agua y un grano de arena. ¿Qué tarea increíble podría hacer un robot si tuviera un sensor táctil tan avanzado como tu propia piel?
+                    Darle a un robot esta misma sensibilidad es uno de los mayores desafíos de la ingeniería. Un robot con un tacto perfecto podría desde desactivar explosivos delicados hasta hacer cirugías microscópicas de forma autónoma.
                 </p>
-            </div>
+            </section>
 
         </main>
         
-        <footer class="text-center mt-8 text-slate-500 text-sm">
-            <p>Misión Sensores 🤖</p>
+        <footer class="text-center mt-12 mb-6 text-slate-500 text-sm font-medium">
+            <a href="index.html" class="inline-block px-6 py-2 bg-slate-800 hover:bg-slate-700 rounded-full transition-colors mb-4 border border-slate-700">
+                ← Volver al Menú Principal
+            </a>
+            <p>Misión Sensores 🤖 • Estación 2</p>
         </footer>
     </div>
 
     <script>
-        // --- Lógica del Juego Avanzado ---
+        
+        // --- 1. LÓGICA DEL SIMULADOR DE FUERZA ---
+        const objects = {
+            huevo: { icon: '🥚', name: 'Huevo Frágil', min: 10, max: 25, failMsgUnder: '¡Se resbaló! Cayó al piso.', failMsgOver: '¡CRASH! Lo hiciste tortilla.' },
+            vaso: { icon: '🥤', name: 'Vaso de Cartón', min: 40, max: 60, failMsgUnder: '¡Muy suave! Se deslizó.', failMsgOver: '¡Oops! Lo abollo y derramó el agua.' },
+            acero: { icon: '🧱', name: 'Bloque de Acero', min: 80, max: 98, failMsgUnder: 'Es muy pesado. ¡Se cayó!', failMsgOver: 'Apenas lo lograste. ¡Cuidado con el motor!' }
+        };
+
+        let currentObj = 'huevo';
+        let force = 0;
+        let forceInterval = null;
+        let isGripping = false;
+        let hasResult = false;
+
+        const btnGrip = document.getElementById('btn-grip');
+        const forceBar = document.getElementById('force-bar');
+        const targetZone = document.getElementById('target-zone');
+        const objDisplay = document.getElementById('object-display');
+        const iconDisplay = document.getElementById('current-object-icon');
+        const forceMessage = document.getElementById('force-message');
+
+        window.selectObject = function(objKey) {
+            currentObj = objKey;
+            hasResult = false;
+            
+            // Actualizar UI botones
+            ['huevo', 'vaso', 'acero'].forEach(k => {
+                const btn = document.getElementById(`btn-${k}`);
+                if(k === objKey) {
+                    btn.classList.add('border-green-500', 'bg-green-900/30');
+                    btn.classList.remove('border-slate-700', 'bg-slate-800');
+                } else {
+                    btn.classList.remove('border-green-500', 'bg-green-900/30');
+                    btn.classList.add('border-slate-700', 'bg-slate-800');
+                }
+            });
+
+            // Restablecer valores
+            force = 0;
+            forceBar.style.width = '0%';
+            iconDisplay.textContent = objects[objKey].icon;
+            forceMessage.textContent = 'Lista para agarrar...';
+            forceMessage.className = "text-sm font-bold text-slate-400 mb-2 h-5";
+            
+            // Quitar clases de animación anteriores
+            iconDisplay.className = "text-6xl drop-shadow-lg";
+            objDisplay.className = "h-24 flex items-center justify-center mb-4 transition-transform duration-300";
+
+            // Actualizar Zona Segura
+            const objData = objects[objKey];
+            targetZone.style.left = `${objData.min}%`;
+            targetZone.style.width = `${objData.max - objData.min}%`;
+        };
+
+        function startGrip(e) {
+            if(e) e.preventDefault(); // Evitar comportamientos por defecto táctiles
+            if(hasResult) selectObject(currentObj); // Reiniciar si ya había jugado
+            
+            isGripping = true;
+            forceMessage.textContent = "Aumentando presión... ¡CUIDADO!";
+            forceMessage.className = "text-sm font-bold text-yellow-400 mb-2 h-5 animate-pulse";
+            btnGrip.classList.add('bg-yellow-600', 'scale-[0.98]');
+            btnGrip.classList.remove('bg-green-600');
+            
+            // Vaciar y reiniciar la barra visualmente
+            forceBar.style.transition = 'none'; 
+            
+            forceInterval = setInterval(() => {
+                force += 1.5; // Velocidad de llenado
+                if (force >= 100) force = 100;
+                forceBar.style.width = `${force}%`;
+                
+                // Efecto visual al presionar (el objeto vibra un poco)
+                if(force > 20) iconDisplay.classList.add('shake-obj');
+                
+                if (force === 100) releaseGrip(); // Suelta automáticamente al llegar al 100
+            }, 20);
+        }
+
+        function releaseGrip(e) {
+            if(e) e.preventDefault();
+            if (!isGripping) return;
+            
+            isGripping = false;
+            hasResult = true;
+            clearInterval(forceInterval);
+            
+            btnGrip.classList.remove('bg-yellow-600', 'scale-[0.98]');
+            btnGrip.classList.add('bg-green-600');
+            iconDisplay.classList.remove('shake-obj');
+
+            const objData = objects[currentObj];
+            
+            if (force < objData.min) {
+                // MUY POCA FUERZA (Se cae)
+                forceMessage.innerHTML = `❌ ${objData.failMsgUnder} (Fuerza: ${Math.floor(force)}%)`;
+                forceMessage.className = "text-sm font-bold text-red-400 mb-2 h-5";
+                objDisplay.classList.add('dropped');
+            } else if (force > objData.max) {
+                // MUCHA FUERZA (Se rompe)
+                forceMessage.innerHTML = `💥 ${objData.failMsgOver} (Fuerza: ${Math.floor(force)}%)`;
+                forceMessage.className = "text-sm font-bold text-rose-500 mb-2 h-5";
+                iconDisplay.classList.add('crushed');
+            } else {
+                // ÉXITO
+                forceMessage.innerHTML = `✅ ¡Perfecto! Presión exacta. (Fuerza: ${Math.floor(force)}%)`;
+                forceMessage.className = "text-sm font-bold text-green-400 mb-2 h-5";
+                objDisplay.classList.add('success-lift');
+            }
+        }
+
+        // Eventos para mouse y touch (Soporte móvil crucial)
+        btnGrip.addEventListener('mousedown', startGrip);
+        btnGrip.addEventListener('touchstart', startGrip, {passive: false});
+        
+        window.addEventListener('mouseup', releaseGrip);
+        window.addEventListener('touchend', releaseGrip);
+
+        // Inicializar el primero
+        selectObject('huevo');
+
+
+        
+        // --- 2. LÓGICA DEL RETO DE DISCRIMINACIÓN (REFLEJOS) ---
         const gameArea = document.getElementById('game-area');
         const scoreDisplay = document.getElementById('score');
         const startButton = document.getElementById('start-button');
-        const gameMessage = document.getElementById('game-message');
+        const overlay = document.getElementById('game-overlay');
+        const gameMessageTitle = document.getElementById('game-message');
+        const gameSubMessage = document.getElementById('game-submessage');
+        const overlayIcon = document.getElementById('overlay-icon');
 
         let score = 0;
+        let targetScore = 10;
         let gameInterval;
-        let greenTargetsSpawned = 0;
         let isGameOver = false;
 
-        startButton.addEventListener('click', startGame);
+        startButton.addEventListener('click', startGame2);
 
-        function startGame() {
-            // Reiniciar variables
+        function startGame2() {
             score = 0;
-            greenTargetsSpawned = 0;
             isGameOver = false;
-            scoreDisplay.textContent = score;
+            updateScoreDisplay();
             
-            // Actualizar UI
-            startButton.disabled = true;
-            startButton.textContent = '¡Toca rápido!';
-            startButton.classList.add('opacity-50', 'cursor-not-allowed');
-            gameMessage.style.display = 'none';
-            gameArea.innerHTML = '';
+            // Ocultar Overlay
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+            gameArea.classList.remove('border-red-500', 'border-green-500');
+            gameArea.classList.add('border-slate-600');
+            
+            // Limpiar área
+            document.querySelectorAll('.target').forEach(t => t.remove());
 
-            // Iniciar el juego
-            gameInterval = setInterval(createTarget, 750); // Aparecen más rápido
+            // Iniciar generador
+            gameInterval = setInterval(createTarget, 600); // 600ms de aparición
         }
 
         function createTarget() {
@@ -134,75 +362,86 @@
             const target = document.createElement('div');
             target.classList.add('target');
 
-            // Decidir aleatoriamente si es verde o rojo (70% verde, 30% rojo)
-            const isGreen = Math.random() < 0.7;
+            // 65% probabilidad de verde, 35% de rojo
+            const isGreen = Math.random() < 0.65;
+            target.classList.add(isGreen ? 'green-target' : 'red-target');
 
-            if (isGreen) {
-                target.classList.add('green-target');
-                greenTargetsSpawned++;
-            } else {
-                target.classList.add('red-target');
-            }
+            // Posición segura dentro de los límites
+            const rect = gameArea.getBoundingClientRect();
+            const maxX = rect.width - 60; // 50px de ancho + margen
+            const maxY = rect.height - 60; 
+            
+            target.style.left = `${Math.floor(Math.random() * maxX) + 5}px`;
+            target.style.top = `${Math.floor(Math.random() * maxY) + 5}px`;
 
-            // Posición aleatoria
-            const gameAreaRect = gameArea.getBoundingClientRect();
-            const maxX = gameAreaRect.width - 55;
-            const maxY = gameAreaRect.height - 55;
-            target.style.left = `${Math.floor(Math.random() * maxX)}px`;
-            target.style.top = `${Math.floor(Math.random() * maxY)}px`;
-
-            // Evento al tocar
-            target.addEventListener('click', () => {
-                if (isGameOver) return;
-                score += isGreen ? 1 : -1;
-                scoreDisplay.textContent = score;
-                target.remove();
-                checkWinCondition(); // Comprobar si ha ganado
-            });
+            // Lógica al tocar
+            target.addEventListener('mousedown', (e) => handleTap(e, target, isGreen));
+            target.addEventListener('touchstart', (e) => { e.preventDefault(); handleTap(e, target, isGreen); }, {passive: false});
 
             gameArea.appendChild(target);
 
-            // Comprobar condición de derrota
-            if (greenTargetsSpawned >= 10 && score < 5) {
-                endGame(false); // 'false' indica que el jugador perdió
-            }
-
-            // El objetivo desaparece si no se toca
+            // Desaparecer automático
             setTimeout(() => {
-                if (target) target.remove();
-            }, 1800);
+                if (target.parentNode && !isGameOver) {
+                    target.style.opacity = '0';
+                    setTimeout(() => target.remove(), 200);
+                }
+            }, 1200); // Se quedan 1.2 segundos en pantalla
+        }
+
+        function handleTap(e, targetEl, isGreen) {
+            if (isGameOver) return;
+            
+            // Efecto visual en el contenedor principal
+            gameArea.classList.remove('hit-effect');
+            void gameArea.offsetWidth; // trigger reflow
+            gameArea.classList.add('hit-effect');
+
+            if (isGreen) {
+                score += 1;
+                targetEl.style.transform = 'scale(0)'; // Animación de desaparición
+            } else {
+                score -= 2; // Castigo mayor por equivocarse
+                gameArea.classList.add('border-red-500'); // Efecto de error
+                setTimeout(() => gameArea.classList.remove('border-red-500'), 200);
+            }
+            
+            if(score < 0) score = 0;
+            updateScoreDisplay();
+            
+            setTimeout(() => targetEl.remove(), 100);
+            
+            checkWinCondition();
+        }
+
+        function updateScoreDisplay() {
+            // Convierte puntaje (0 a 10) en porcentaje (0% a 100%)
+            let percent = (score / targetScore) * 100;
+            if(percent > 100) percent = 100;
+            scoreDisplay.textContent = `${Math.floor(percent)}%`;
         }
 
         function checkWinCondition() {
-            if (score >= 5) {
-                endGame(true); // 'true' indica que el jugador ganó
+            if (score >= targetScore) {
+                endGame2(true);
             }
         }
 
-        function endGame(didWin) {
-            if (isGameOver) return;
+        function endGame2(won) {
             isGameOver = true;
             clearInterval(gameInterval);
-
-            // Actualizar UI
-            startButton.disabled = false;
-            startButton.textContent = 'Jugar de Nuevo';
-            startButton.classList.remove('opacity-50', 'cursor-not-allowed');
             
-            gameArea.innerHTML = '';
-            gameMessage.style.display = 'block';
-
-            if (didWin) {
-                gameMessage.textContent = `¡Ganaste! Lo lograste con ${score} puntos.`;
-                gameMessage.classList.remove('text-red-400');
-                gameMessage.classList.add('text-green-400');
-            } else {
-                gameMessage.textContent = `¡Perdiste! Necesitabas 5 puntos. Tu puntuación: ${score}.`;
-                gameMessage.classList.add('text-red-400');
-                gameMessage.classList.remove('text-green-400');
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+            
+            if (won) {
+                overlayIcon.textContent = '🎉';
+                gameMessageTitle.textContent = '¡Calibración 100%!';
+                gameMessageTitle.className = 'text-3xl font-black text-green-400 mb-2 drop-shadow-[0_0_10px_rgba(74,222,128,0.5)]';
+                gameSubMessage.textContent = 'Tu sensor táctil es rápido y no cometió errores críticos.';
+                startButton.textContent = 'Repetir Calibración';
+                gameArea.classList.replace('border-slate-600', 'border-green-500');
             }
         }
     </script>
-
 </body>
 </html>

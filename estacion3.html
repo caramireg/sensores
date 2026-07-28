@@ -4,182 +4,619 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estación 3: La Visión a Color del Robot</title>
-    <!-- Carga de Tailwind CSS para los estilos -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Carga de la fuente Inter de Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
     <style>
         body { 
             font-family: 'Inter', sans-serif; 
+            user-select: none;
         }
-        /* Estilo para los botones de colores del juego */
-        .color-button {
-            transition: transform 0.1s ease, opacity 0.2s ease;
+
+        /* Animaciones para el clasificador */
+        @keyframes slideIn {
+            0% { transform: translateY(-50px) scale(0.5); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
         }
-        .color-button:active {
-            transform: scale(0.95);
+        @keyframes sortLeft {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(-100px, 50px) scale(0.5); opacity: 0; }
         }
-        /* Clase para la animación de 'flash' del botón */
-        .flash {
-            opacity: 0.5;
+        @keyframes sortRight {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(100px, 50px) scale(0.5); opacity: 0; }
+        }
+        @keyframes sortDown {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(0, 100px) scale(0.5); opacity: 0; }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+        
+        .anim-enter { animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .anim-sort-red { animation: sortLeft 0.4s ease-in forwards; }
+        .anim-sort-blue { animation: sortRight 0.4s ease-in forwards; }
+        .anim-sort-green { animation: sortDown 0.4s ease-in forwards; }
+        .anim-error { animation: shake 0.3s ease-in-out; filter: grayscale(100%); }
+
+        /* Estilos del Simón Dice */
+        .simon-flash {
+            filter: brightness(1.5);
             transform: scale(1.05);
+            z-index: 10;
         }
+
+        /* Estilos de los inputs range RGB */
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        #slider-r::-webkit-slider-thumb { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+        #slider-g::-webkit-slider-thumb { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
+        #slider-b::-webkit-slider-thumb { background: #3b82f6; box-shadow: 0 0 10px #3b82f6; }
     </style>
 </head>
 <body class="bg-slate-900 text-white antialiased">
 
-    <!-- Contenedor principal -->
-    <div class="container mx-auto p-6 max-w-2xl">
+    <div class="container mx-auto p-6 max-w-3xl">
         
-        <!-- Encabezado de la estación -->
         <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-black text-purple-400">ESTACIÓN 3</h1>
-            <h2 class="text-2xl md:text-3xl font-bold mt-2">La Visión a Color del Robot</h2>
+            <h1 class="text-3xl md:text-4xl font-black text-purple-400 tracking-wider">ESTACIÓN 3</h1>
+            <h2 class="text-2xl md:text-3xl font-bold mt-2">La Visión a Color</h2>
         </header>
 
-        <!-- Tarjeta de contenido principal -->
-        <main class="bg-slate-800 rounded-2xl shadow-lg p-6 md:p-8">
+        <main class="space-y-8">
             
-            <!-- Texto explicativo -->
-            <div class="mb-6">
-                <p class="text-lg leading-relaxed text-slate-300">
-                    ¡Sistema visual en línea! Has activado el <strong class="font-bold text-purple-400">sensor de luz y color</strong>. Este permite al robot no solo ver, sino también diferenciar colores para seguir caminos o clasificar objetos. ¡Pon a prueba tu propio sensor de color!
-                </p>
-            </div>
+            <section class="bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-700">
+                <div class="p-6 md:p-8">
+                    <h3 class="text-2xl font-bold text-purple-300 mb-4 flex items-center">
+                        <span class="text-3xl mr-3">👁️</span>
+                        Calibración: El Ojo Digital
+                    </h3>
+                    <p class="text-lg leading-relaxed text-slate-300 mb-6">
+                        Los robots no saben qué es el color "Amarillo" o "Naranja". Sus sensores ven la luz como números que miden la cantidad de luz <strong>Roja (R)</strong>, <strong>Verde (G)</strong> y <strong>Azul (B)</strong> que rebota de un objeto. 
+                        <br><br><strong>Reto:</strong> Eres el ingeniero del robot. Mueve los sensores de luz RGB para mezclar los colores y lograr que tu lectura coincida con el Color Objetivo.
+                    </p>
 
-            <!-- Mini-juego de memoria de colores -->
-            <div class="bg-slate-900 rounded-lg p-4 border-2 border-slate-700">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-purple-300">Reto de Memoria Cromática</h3>
-                    <div class="text-right">
-                        <span class="text-slate-400">Nivel:</span>
-                        <span id="level" class="font-bold text-2xl text-white">0</span>
+                    <div class="bg-slate-900 p-6 rounded-xl border-2 border-slate-700 shadow-inner">
+                        
+                        <!-- Pantallas de color -->
+                        <div class="flex justify-around items-center mb-8 gap-2 sm:gap-4">
+                            <!-- Color Objetivo -->
+                            <div class="flex flex-col items-center">
+                                <span class="text-sm text-slate-400 font-bold mb-3 uppercase tracking-wider">Objetivo</span>
+                                <div id="target-color-box" class="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-[3px] border-white/30 flex items-center justify-center transition-all duration-500 relative z-10">
+                                    <span class="text-3xl drop-shadow-md">🎯</span>
+                                </div>
+                                <span id="target-color-name" class="mt-4 font-bold text-slate-200">Naranja</span>
+                            </div>
+                            
+                            <!-- Divisor -->
+                            <div class="text-xl sm:text-2xl text-slate-600 font-black">VS</div>
+                            
+                            <!-- Color Actual (Lectura) -->
+                            <div class="flex flex-col items-center">
+                                <span class="text-sm text-slate-400 font-bold mb-3 uppercase tracking-wider">Tu Lectura</span>
+                                <div id="current-color-box" class="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-[3px] border-white/30 flex items-center justify-center transition-all relative z-10" style="background-color: rgb(0,0,0);">
+                                    <span id="rgb-match-icon" class="text-4xl drop-shadow-md opacity-0 transition-opacity">✅</span>
+                                </div>
+                                <span id="rgb-status" class="mt-4 font-bold text-slate-500">Descalibrado</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-5">
+                            <!-- R -->
+                            <div class="flex items-center gap-4">
+                                <span class="w-8 font-black text-red-500 text-lg">R</span>
+                                <input type="range" id="slider-r" min="0" max="255" value="0" class="w-full h-3 bg-red-950 rounded-lg appearance-none cursor-pointer">
+                                <span id="val-r" class="w-10 text-right font-mono text-slate-400 font-bold">0</span>
+                            </div>
+                            <!-- G -->
+                            <div class="flex items-center gap-4">
+                                <span class="w-8 font-black text-green-500 text-lg">G</span>
+                                <input type="range" id="slider-g" min="0" max="255" value="0" class="w-full h-3 bg-green-950 rounded-lg appearance-none cursor-pointer">
+                                <span id="val-g" class="w-10 text-right font-mono text-slate-400 font-bold">0</span>
+                            </div>
+                            <!-- B -->
+                            <div class="flex items-center gap-4">
+                                <span class="w-8 font-black text-blue-500 text-lg">B</span>
+                                <input type="range" id="slider-b" min="0" max="255" value="0" class="w-full h-3 bg-blue-950 rounded-lg appearance-none cursor-pointer">
+                                <span id="val-b" class="w-10 text-right font-mono text-slate-400 font-bold">0</span>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
-                
-                <!-- El área del juego -->
-                <div id="game-area" class="relative w-full grid grid-cols-2 gap-4 h-64 md:h-80">
-                    <button data-color="green" class="color-button bg-green-500 rounded-lg"></button>
-                    <button data-color="red" class="color-button bg-red-500 rounded-lg"></button>
-                    <button data-color="yellow" class="color-button bg-yellow-500 rounded-lg"></button>
-                    <button data-color="blue" class="color-button bg-blue-500 rounded-lg"></button>
-                    <div id="game-overlay" class="absolute inset-0 bg-black/70 flex justify-center items-center rounded-lg">
-                        <span id="game-message" class="text-slate-300 text-center p-4 font-semibold text-lg">Observa la secuencia y repítela.</span>
-                    </div>
+            </section>
+
+            <section class="bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-700 relative group">
+                <!-- Bloqueo del juego hasta calibrar -->
+                <div id="game-lock" class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-30 flex flex-col items-center justify-center transition-opacity duration-500">
+                    <span class="text-5xl mb-4">🔒</span>
+                    <h3 class="text-xl font-bold text-slate-300">Sensor Bloqueado</h3>
+                    <p class="text-slate-400 text-sm mt-2">Calibra el sensor RGB arriba primero.</p>
                 </div>
 
-                <button id="start-button" class="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-lg">
-                    Iniciar Reto
-                </button>
-            </div>
+                <div class="p-6 md:p-8">
+                    <div class="flex items-start justify-between mb-4 gap-4">
+                        <div>
+                            <h3 class="font-bold text-2xl text-purple-300 mb-2 flex items-center">
+                                <span class="text-3xl mr-3">🤖</span>
+                                Reto: Planta Clasificadora
+                            </h3>
+                            <p class="text-slate-300">
+                                Las fábricas de reciclaje usan sensores de color para separar materiales súper rápido. Identifica el objeto en el escáner central y presiona el botón correcto antes de que caiga.
+                            </p>
+                        </div>
+                    </div>
 
-            <!-- Reflexión Final -->
-            <div class="mt-8 bg-indigo-900/50 border-l-4 border-indigo-400 p-4 rounded-lg">
-                <h3 class="font-bold text-xl text-indigo-300 mb-2">Reflexión: El Cerebro como Procesador</h3>
-                <p class="text-indigo-200 leading-relaxed">
-                    En el juego, tus ojos (el sensor) detectaron los colores y tu cerebro (el procesador) recordó la secuencia para actuar. Un robot seguidor de línea hace lo mismo: su sensor ve el color del suelo y su procesador le ordena girar para no salirse del camino.
-                    <br><br>
-                    Imagina un robot en una planta de reciclaje. ¿Cómo usaría un sensor de color para separar botellas de plástico <strong class="text-green-400">verdes</strong>, <strong class="text-blue-400">azules</strong> y <strong class="text-slate-300">transparentes</strong>?
-                </p>
-            </div>
+                    <div class="bg-slate-900 rounded-xl p-4 md:p-6 border-2 border-slate-700 shadow-inner">
+                        
+                        <!-- Header del Juego -->
+                        <div class="flex justify-between items-center mb-6 bg-slate-800 p-3 rounded-lg border border-slate-600">
+                            <div>
+                                <span class="text-xs text-slate-400 uppercase font-bold tracking-wider block">Puntuación</span>
+                                <span id="score" class="font-mono text-2xl text-purple-400 font-bold">0</span><span class="text-slate-500">/10</span>
+                            </div>
+                            <div class="text-right w-1/2">
+                                <span class="text-xs text-slate-400 uppercase font-bold tracking-wider block mb-1">Tiempo de Escaneo</span>
+                                <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
+                                    <div id="timer-bar" class="h-full bg-gradient-to-r from-purple-400 to-pink-500 w-full transition-all ease-linear"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="relative w-full h-40 bg-slate-950 rounded-lg overflow-hidden border-2 border-slate-600 shadow-[inset_0_0_30px_rgba(0,0,0,0.8)] flex flex-col justify-center items-center mb-6">
+                            
+                            <!-- Guías láser del escáner -->
+                            <div class="absolute inset-0 pointer-events-none flex justify-center items-center">
+                                <div class="w-24 h-24 border-2 border-dashed border-purple-500/50 rounded-lg"></div>
+                                <div class="absolute w-full h-[2px] bg-purple-500/30 animate-pulse shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
+                            </div>
+                            
+                            <!-- Objeto a clasificar -->
+                            <div id="scanner-object" class="text-6xl z-10 transition-transform">❓</div>
+                            
+                            <!-- Contenedores visuales de fondo -->
+                            <div class="absolute bottom-0 left-4 w-12 h-4 border-t-2 border-red-500/30 bg-red-900/20 rounded-t-full"></div>
+                            <div class="absolute bottom-0 w-12 h-4 border-t-2 border-green-500/30 bg-green-900/20 rounded-t-full"></div>
+                            <div class="absolute bottom-0 right-4 w-12 h-4 border-t-2 border-blue-500/30 bg-blue-900/20 rounded-t-full"></div>
+
+                            <!-- Overlay de inicio/fin del juego -->
+                            <div id="game-start-overlay" class="absolute inset-0 bg-slate-900/90 z-20 flex flex-col justify-center items-center backdrop-blur-sm">
+                                <button id="btn-start-sort" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-8 rounded-full transition-all shadow-[0_0_15px_rgba(168,85,247,0.5)] active:scale-95">
+                                    Iniciar Cinta
+                                </button>
+                                <p id="game-feedback" class="text-sm font-bold text-slate-300 mt-4 text-center px-4"></p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-4">
+                            <button onclick="checkSort('red')" class="h-20 bg-gradient-to-b from-red-500 to-red-700 rounded-xl shadow-[0_8px_0_#991b1b,0_15px_20px_rgba(0,0,0,0.4)] active:shadow-[0_2px_0_#991b1b,0_5px_10px_rgba(0,0,0,0.4)] active:translate-y-2 transition-all border border-red-400 flex flex-col items-center justify-center group">
+                                <span class="text-2xl mb-1 group-active:scale-90 transition-transform">🍎</span>
+                                <span class="text-[10px] font-black uppercase tracking-wider text-red-200">Rojo</span>
+                            </button>
+                            <button onclick="checkSort('green')" class="h-20 bg-gradient-to-b from-green-500 to-green-700 rounded-xl shadow-[0_8px_0_#166534,0_15px_20px_rgba(0,0,0,0.4)] active:shadow-[0_2px_0_#166534,0_5px_10px_rgba(0,0,0,0.4)] active:translate-y-2 transition-all border border-green-400 flex flex-col items-center justify-center group">
+                                <span class="text-2xl mb-1 group-active:scale-90 transition-transform">🍃</span>
+                                <span class="text-[10px] font-black uppercase tracking-wider text-green-200">Verde</span>
+                            </button>
+                            <button onclick="checkSort('blue')" class="h-20 bg-gradient-to-b from-blue-500 to-blue-700 rounded-xl shadow-[0_8px_0_#1e40af,0_15px_20px_rgba(0,0,0,0.4)] active:shadow-[0_2px_0_#1e40af,0_5px_10px_rgba(0,0,0,0.4)] active:translate-y-2 transition-all border border-blue-400 flex flex-col items-center justify-center group">
+                                <span class="text-2xl mb-1 group-active:scale-90 transition-transform">💧</span>
+                                <span class="text-[10px] font-black uppercase tracking-wider text-blue-200">Azul</span>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. RETO ADICIONAL: SIMÓN DICE -->
+            <section class="bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-700 relative group">
+                <div class="p-6 md:p-8">
+                    <h3 class="font-bold text-2xl text-purple-300 mb-2 flex items-center">
+                        <span class="text-3xl mr-3">🧠</span>
+                        Reto Adicional: Memoria de Color
+                    </h3>
+                    <p class="text-slate-300 mb-6 text-lg">
+                        Los robots seguidores de línea a menudo deben recordar secuencias de colores en el suelo para tomar decisiones en un laberinto. ¡Pon a prueba el procesador de tu cerebro repitiendo el patrón!
+                    </p>
+
+                    <div class="bg-slate-900 rounded-xl p-4 md:p-6 border-2 border-slate-700 shadow-inner max-w-md mx-auto">
+                        <div class="flex justify-between items-center mb-6 bg-slate-800 p-3 rounded-lg border border-slate-600">
+                            <span class="text-slate-400 font-bold uppercase tracking-wider text-xs">Nivel Actual</span>
+                            <span id="simon-level" class="font-mono text-2xl text-purple-400 font-bold">0</span>
+                        </div>
+                        
+                        <div id="simon-game-area" class="relative w-full grid grid-cols-2 gap-4 h-64">
+                            <!-- Botones del juego -->
+                            <button data-simon-color="green" class="simon-btn bg-green-600 hover:bg-green-500 rounded-xl border-4 border-green-700 transition-all duration-200 shadow-lg cursor-pointer"></button>
+                            <button data-simon-color="red" class="simon-btn bg-red-600 hover:bg-red-500 rounded-xl border-4 border-red-700 transition-all duration-200 shadow-lg cursor-pointer"></button>
+                            <button data-simon-color="yellow" class="simon-btn bg-yellow-500 hover:bg-yellow-400 rounded-xl border-4 border-yellow-600 transition-all duration-200 shadow-lg cursor-pointer"></button>
+                            <button data-simon-color="blue" class="simon-btn bg-blue-600 hover:bg-blue-500 rounded-xl border-4 border-blue-700 transition-all duration-200 shadow-lg cursor-pointer"></button>
+                            
+                            <!-- Overlay de Inicio / Fin -->
+                            <div id="simon-overlay" class="absolute inset-0 bg-slate-900/90 backdrop-blur-sm flex flex-col justify-center items-center rounded-xl z-20 transition-opacity duration-300 border border-slate-700">
+                                <span id="simon-message" class="text-slate-300 text-center px-4 font-bold text-lg mb-6">Observa la luz y repite.</span>
+                                <button id="simon-start-btn" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-8 rounded-full shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-transform active:scale-95">
+                                    Iniciar Reto
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
         </main>
         
-        <footer class="text-center mt-8 text-slate-500 text-sm">
-            <p>Misión Sensores 🤖</p>
+        <footer class="text-center mt-12 mb-6 text-slate-500 text-sm font-medium">
+            <a href="index.html" class="inline-block px-6 py-2 bg-slate-800 hover:bg-slate-700 rounded-full transition-colors mb-4 border border-slate-700">
+                ← Volver al Menú Principal
+            </a>
+            <p>Misión Sensores 🤖 • Estación 3</p>
         </footer>
     </div>
 
     <script>
-        // --- Lógica del Juego de Memoria ---
-        const levelDisplay = document.getElementById('level');
-        const startButton = document.getElementById('start-button');
-        const gameMessage = document.getElementById('game-message');
-        const gameOverlay = document.getElementById('game-overlay');
-        const colorButtons = document.querySelectorAll('.color-button');
+        
+        // ==========================================
+        // 1. LÓGICA DEL SIMULADOR DE CALIBRACIÓN RGB
+        // ==========================================
+        
+        const sliderR = document.getElementById('slider-r');
+        const sliderG = document.getElementById('slider-g');
+        const sliderB = document.getElementById('slider-b');
+        const valR = document.getElementById('val-r');
+        const valG = document.getElementById('val-g');
+        const valB = document.getElementById('val-b');
+        
+        const currentColorBox = document.getElementById('current-color-box');
+        const targetColorBox = document.getElementById('target-color-box');
+        const statusText = document.getElementById('rgb-status');
+        const matchIcon = document.getElementById('rgb-match-icon');
+        const gameLock = document.getElementById('game-lock');
 
-        const colors = ['green', 'red', 'yellow', 'blue'];
-        let sequence = [];
-        let playerSequence = [];
-        let level = 0;
-        let isPlayerTurn = false;
+        // Niveles de calibración (Objetivos)
+        const targets = [
+            { name: "Naranja", r: 255, g: 128, b: 0 },
+            { name: "Cian (Celeste)", r: 0, g: 255, b: 255 },
+            { name: "Magenta", r: 255, g: 0, b: 255 }
+        ];
+        
+        let currentTargetIndex = 0;
+        let isCalibrated = false;
 
-        startButton.addEventListener('click', startGame);
+        function setTarget(index) {
+            const t = targets[index];
+            document.getElementById('target-color-name').textContent = t.name;
+            targetColorBox.style.backgroundColor = `rgb(${t.r}, ${t.g}, ${t.b})`;
+            
+            // Añadir resplandor dinámico (LED luminoso)
+            targetColorBox.style.boxShadow = `0 0 35px rgba(${t.r}, ${t.g}, ${t.b}, 0.7), inset 0 0 20px rgba(255,255,255,0.4)`;
+            
+            // Efecto visual al cambiar
+            targetColorBox.classList.add('scale-110');
+            setTimeout(() => targetColorBox.classList.remove('scale-110'), 300);
+        }
+
+        function updateColor() {
+            const r = parseInt(sliderR.value);
+            const g = parseInt(sliderG.value);
+            const b = parseInt(sliderB.value);
+
+            valR.textContent = r;
+            valG.textContent = g;
+            valB.textContent = b;
+
+            currentColorBox.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+            
+            // Añadir resplandor dinámico a tu lectura para quitar lo opaco
+            currentColorBox.style.boxShadow = `0 0 35px rgba(${r}, ${g}, ${b}, 0.6), inset 0 0 20px rgba(255,255,255,0.3)`;
+
+            checkCalibration(r, g, b);
+        }
+
+        function checkCalibration(r, g, b) {
+            const target = targets[currentTargetIndex];
+            // Tolerancia de error de +/- 20 puntos por canal (no tiene que ser exacto al 100%)
+            const tolerance = 20;
+
+            const isRMatch = Math.abs(r - target.r) <= tolerance;
+            const isGMatch = Math.abs(g - target.g) <= tolerance;
+            const isBMatch = Math.abs(b - target.b) <= tolerance;
+
+            if (isRMatch && isGMatch && isBMatch) {
+                // Éxito en este color
+                statusText.textContent = "¡Calibrado!";
+                statusText.className = "mt-3 font-bold text-green-400";
+                currentColorBox.classList.add('border-green-400');
+                matchIcon.classList.remove('opacity-0');
+
+                // Pasar al siguiente color o desbloquear juego
+                setTimeout(() => {
+                    if (currentTargetIndex < targets.length - 1) {
+                        currentTargetIndex++;
+                        setTarget(currentTargetIndex);
+                        
+                        // Reset status visual
+                        statusText.textContent = "Buscando...";
+                        statusText.className = "mt-3 font-bold text-slate-500";
+                        currentColorBox.classList.remove('border-green-400');
+                        matchIcon.classList.add('opacity-0');
+                    } else if (!isCalibrated) {
+                        // Desbloquear Planta Clasificadora
+                        isCalibrated = true;
+                        statusText.textContent = "SENSOR LISTO";
+                        gameLock.classList.add('opacity-0', 'pointer-events-none');
+                    }
+                }, 1000);
+
+            } else {
+                statusText.textContent = "Descalibrado";
+                statusText.className = "mt-3 font-bold text-slate-500";
+                currentColorBox.classList.remove('border-green-400');
+                matchIcon.classList.add('opacity-0');
+            }
+        }
+
+        // Listeners para los sliders
+        sliderR.addEventListener('input', updateColor);
+        sliderG.addEventListener('input', updateColor);
+        sliderB.addEventListener('input', updateColor);
+
+        // Iniciar primer objetivo
+        setTarget(0);
+        updateColor();
+
+
+
+        // ==========================================
+        // 2. LÓGICA DEL JUEGO DE CLASIFICACIÓN
+        // ==========================================
+
+        const items = [
+            { icon: '🍎', color: 'red', name: 'Manzana' },
+            { icon: '🍓', color: 'red', name: 'Fresa' },
+            { icon: '🚗', color: 'red', name: 'Coche Rojo' },
+            { icon: '🍃', color: 'green', name: 'Hoja' },
+            { icon: '🐸', color: 'green', name: 'Rana' },
+            { icon: '🔋', color: 'green', name: 'Batería' },
+            { icon: '💧', color: 'blue', name: 'Gota de agua' },
+            { icon: '🧊', color: 'blue', name: 'Hielo' },
+            { icon: '🚙', color: 'blue', name: 'Coche Azul' }
+        ];
+
+        let score = 0;
+        const maxScore = 10;
+        let isPlaying = false;
+        let currentItem = null;
+        let timerInterval = null;
+        let objectTimeout = null;
+        
+        const scoreDisplay = document.getElementById('score');
+        const scannerObject = document.getElementById('scanner-object');
+        const timerBar = document.getElementById('timer-bar');
+        const startBtn = document.getElementById('btn-start-sort');
+        const gameOverlay = document.getElementById('game-start-overlay');
+        const gameFeedback = document.getElementById('game-feedback');
+
+        startBtn.addEventListener('click', startGame);
 
         function startGame() {
-            level = 0;
-            sequence = [];
-            startButton.style.display = 'none';
-            gameOverlay.style.display = 'none';
-            nextLevel();
+            score = 0;
+            updateScoreDisplay();
+            isPlaying = true;
+            gameOverlay.classList.add('opacity-0', 'pointer-events-none');
+            spawnNextObject();
         }
 
-        function nextLevel() {
-            level++;
-            levelDisplay.textContent = level;
-            playerSequence = [];
-            isPlayerTurn = false;
+        function spawnNextObject() {
+            if (!isPlaying) return;
+
+            if (score >= maxScore) {
+                endGame(true);
+                return;
+            }
+
+            // Seleccionar item aleatorio
+            currentItem = items[Math.floor(Math.random() * items.length)];
             
-            // Añadir un nuevo color aleatorio a la secuencia
-            const randomColor = colors[Math.floor(Math.random() * colors.length)];
-            sequence.push(randomColor);
+            // Preparar UI
+            scannerObject.textContent = currentItem.icon;
+            scannerObject.className = "text-6xl z-10 anim-enter"; // Animación de entrada
+            
+            // Iniciar temporizador (2 segundos para reaccionar)
+            timerBar.style.transition = 'none';
+            timerBar.style.width = '100%';
+            
+            // Pequeño delay para que CSS asimile el width 100% antes de animar a 0
+            setTimeout(() => {
+                timerBar.style.transition = 'width 1.8s linear';
+                timerBar.style.width = '0%';
+            }, 50);
 
-            showSequence();
+            // Si se acaba el tiempo, cuenta como error
+            objectTimeout = setTimeout(() => {
+                if (isPlaying) {
+                    handleError("¡Tiempo agotado!");
+                }
+            }, 1850);
         }
 
-        function showSequence() {
+        window.checkSort = function(selectedColor) {
+            if (!isPlaying || !currentItem) return;
+
+            clearTimeout(objectTimeout);
+            timerBar.style.transition = 'none'; // Detener barra
+            
+            // Limpiar clases de animación anteriores
+            scannerObject.classList.remove('anim-enter', 'anim-sort-red', 'anim-sort-blue', 'anim-sort-green', 'anim-error');
+            // Trigger reflow para poder reiniciar animaciones
+            void scannerObject.offsetWidth;
+
+            if (selectedColor === currentItem.color) {
+                // ACIERTO
+                score++;
+                updateScoreDisplay();
+                
+                // Animar hacia el contenedor correcto
+                scannerObject.classList.add(`anim-sort-${selectedColor}`);
+                
+                currentItem = null; // Evitar doble click
+                
+                setTimeout(() => {
+                    spawnNextObject();
+                }, 400); // Esperar que termine la animación de salida
+
+            } else {
+                // ERROR
+                handleError("¡Color equivocado!");
+            }
+        };
+
+        function handleError(msg) {
+            scannerObject.classList.add('anim-error');
+            score = Math.max(0, score - 1); // Castigo, no bajar de 0
+            updateScoreDisplay();
+            
+            currentItem = null; // Pausar entrada momentáneamente
+
+            // Mostrar feedback en la barra superior o mediante shake
+            setTimeout(() => {
+                spawnNextObject();
+            }, 600); // Castigo de tiempo
+        }
+
+        function updateScoreDisplay() {
+            scoreDisplay.textContent = score;
+        }
+
+        function endGame(won) {
+            isPlaying = false;
+            clearTimeout(objectTimeout);
+            
+            gameOverlay.classList.remove('opacity-0', 'pointer-events-none');
+            
+            if (won) {
+                startBtn.textContent = 'Jugar de Nuevo';
+                gameFeedback.innerHTML = "¡Excelente! Has clasificado los objetos con precisión robótica.<br>✅ Reto Superado.";
+                gameFeedback.className = "text-lg font-bold text-green-400 mt-6 text-center px-4";
+            }
+        }
+
+        // ==========================================
+        // 3. LÓGICA DEL RETO ADICIONAL (SIMÓN DICE)
+        // ==========================================
+        const simonLevelDisplay = document.getElementById('simon-level');
+        const simonStartBtn = document.getElementById('simon-start-btn');
+        const simonMessage = document.getElementById('simon-message');
+        const simonOverlay = document.getElementById('simon-overlay');
+        const simonButtons = document.querySelectorAll('.simon-btn');
+
+        const simonColors = ['green', 'red', 'yellow', 'blue'];
+        let simonSequence = [];
+        let simonPlayerSequence = [];
+        let simonLevel = 0;
+        let simonIsPlayerTurn = false;
+
+        simonStartBtn.addEventListener('click', startSimonGame);
+
+        function startSimonGame() {
+            simonLevel = 0;
+            simonSequence = [];
+            simonMessage.className = "text-slate-300 text-center px-4 font-bold text-lg mb-6";
+            simonMessage.textContent = "Observa la luz y repite.";
+            simonOverlay.classList.add('opacity-0', 'pointer-events-none');
+            nextSimonLevel();
+        }
+
+        function nextSimonLevel() {
+            simonLevel++;
+            simonLevelDisplay.textContent = simonLevel;
+            simonPlayerSequence = [];
+            simonIsPlayerTurn = false;
+            
+            const randomColor = simonColors[Math.floor(Math.random() * simonColors.length)];
+            simonSequence.push(randomColor);
+            
+            setTimeout(showSimonSequence, 600); // Pequeña pausa antes de mostrar la secuencia
+        }
+
+        function showSimonSequence() {
             let i = 0;
             const interval = setInterval(() => {
-                if (i >= sequence.length) {
+                if (i >= simonSequence.length) {
                     clearInterval(interval);
-                    isPlayerTurn = true; // El jugador puede empezar a tocar
+                    simonIsPlayerTurn = true; // El jugador puede empezar a tocar
                     return;
                 }
-                flashButton(sequence[i]);
+                flashSimonButton(simonSequence[i]);
                 i++;
             }, 800); // Tiempo entre flashes
         }
 
-        function flashButton(color) {
-            const button = document.querySelector(`[data-color="${color}"]`);
-            button.classList.add('flash');
+        function flashSimonButton(color) {
+            const button = document.querySelector(`[data-simon-color="${color}"]`);
+            button.classList.add('simon-flash');
+            
+            // Efecto de resplandor (glow)
+            let shadowColor = '';
+            if(color==='green') shadowColor = 'rgba(34,197,94,0.8)';
+            if(color==='red') shadowColor = 'rgba(239,68,68,0.8)';
+            if(color==='yellow') shadowColor = 'rgba(234,179,8,0.8)';
+            if(color==='blue') shadowColor = 'rgba(59,130,246,0.8)';
+            
+            button.style.boxShadow = `0 0 30px ${shadowColor}`;
+            
             setTimeout(() => {
-                button.classList.remove('flash');
+                button.classList.remove('simon-flash');
+                button.style.boxShadow = 'none';
             }, 400); // Duración del flash
         }
 
-        colorButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                if (!isPlayerTurn) return;
+        simonButtons.forEach(button => {
+            // Manejador dual para Mouse y Touch
+            const handlePress = (e) => {
+                if(e.type === 'touchstart') e.preventDefault();
+                if (!simonIsPlayerTurn) return;
 
-                const clickedColor = button.dataset.color;
-                playerSequence.push(clickedColor);
-                flashButton(clickedColor);
+                const clickedColor = button.dataset.simonColor;
+                simonPlayerSequence.push(clickedColor);
+                flashSimonButton(clickedColor);
 
                 // Comprobar si el color es correcto
-                const lastIndex = playerSequence.length - 1;
-                if (playerSequence[lastIndex] !== sequence[lastIndex]) {
-                    endGame();
+                const lastIndex = simonPlayerSequence.length - 1;
+                if (simonPlayerSequence[lastIndex] !== simonSequence[lastIndex]) {
+                    endSimonGame();
                     return;
                 }
 
                 // Comprobar si la secuencia está completa
-                if (playerSequence.length === sequence.length) {
-                    setTimeout(nextLevel, 1000);
+                if (simonPlayerSequence.length === simonSequence.length) {
+                    simonIsPlayerTurn = false; // Bloquear toques mientras carga
+                    setTimeout(nextSimonLevel, 1000);
                 }
-            });
+            };
+            
+            button.addEventListener('mousedown', handlePress);
+            button.addEventListener('touchstart', handlePress, {passive: false});
         });
 
-        function endGame() {
-            gameMessage.textContent = `¡Incorrecto! Llegaste al nivel ${level}. Presiona para reiniciar.`;
-            gameOverlay.style.display = 'flex';
-            startButton.textContent = 'Reiniciar Reto';
-            startButton.style.display = 'block';
-            isPlayerTurn = false;
+        function endSimonGame() {
+            simonMessage.innerHTML = `¡Secuencia Incorrecta! 💥<br><span class="text-sm font-normal text-slate-400 mt-2 block">Llegaste al nivel ${simonLevel}</span>`;
+            simonMessage.className = "text-rose-400 text-center px-4 font-bold text-xl mb-6";
+            simonOverlay.classList.remove('opacity-0', 'pointer-events-none');
+            simonStartBtn.textContent = 'Reintentar Reto';
+            simonIsPlayerTurn = false;
         }
     </script>
-
 </body>
 </html>

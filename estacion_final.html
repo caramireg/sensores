@@ -2,68 +2,886 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estación Final: ¡El Robot Cobra Vida!</title>
-    <!-- Carga de Tailwind CSS para los estilos -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Estación 5: El Cerebro del Robot</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Carga de la fuente Inter de Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
     <style>
         body { 
             font-family: 'Inter', sans-serif; 
+            background-color: #0f172a; /* slate-900 */
+            color: #f8fafc; /* slate-50 */
         }
+
+        /* =========================================
+           ESTILOS SCOPEADOS DEL SIMULADOR CODEBOT
+           ========================================= */
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --purple: #8b5cf6;
+            --grid-bg: #334155;
+            --cell-bg: #475569;
+            --cell-border: #64748b;
+        }
+
+        /* Contenedor principal que aísla el juego del resto de la página */
+        #codebot-wrapper {
+            position: relative;
+            width: 100%;
+            height: 700px;
+            background-color: var(--bg-color);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* --- MENÚS --- */
+        .screen { display: none; flex-direction: column; width: 100%; height: 100%; }
+        .screen.active { display: flex; }
+        .menu-container { align-items: center; justify-content: center; padding: 20px; background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%); }
+        .title-box { text-align: center; margin-bottom: 30px; }
+        .title-box h1 { font-size: 2.8rem; color: var(--accent); margin-bottom: 10px; font-weight: 900; }
+        .title-box p { color: #cbd5e1; font-size: 1.1rem; }
+        
+        .menu-btn { background-color: var(--panel-bg); border: 2px solid var(--accent); color: white; padding: 15px 30px; font-size: 1.1rem; border-radius: 12px; margin: 10px 0; width: 100%; max-width: 320px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: transform 0.1s, background-color 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-weight: bold; }
+        .menu-btn:active { transform: scale(0.95); }
+        .menu-btn:hover { background-color: rgba(59, 130, 246, 0.2); }
+        .menu-btn.btn-single { flex-direction: row; gap: 10px; }
+        .menu-desc { font-size: 0.8rem; color: #cbd5e1; font-weight: normal; }
+        .btn-back { background-color: transparent; border: 2px solid var(--cell-border); color: #cbd5e1; margin-top: 20px; flex-direction: row; }
+        .cb-badge { background: var(--danger); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; margin-left: 5px; }
+
+        /* --- ENCABEZADO DEL JUEGO --- */
+        #codebot-wrapper header { background-color: var(--panel-bg); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 10; }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .btn-home { background: var(--grid-bg); border: 1px solid var(--cell-border); color: white; border-radius: 8px; width: 35px; height: 35px; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; cursor: pointer; }
+        .btn-home:active { background: var(--danger); }
+        h2.game-title { font-size: 1.1rem; color: var(--accent); margin: 0; font-weight: bold; }
+        .level-info { text-align: right; }
+        .level-info h3 { font-size: 0.9rem; margin-bottom: 2px; color: white; font-weight: bold; }
+        .level-info p { font-size: 0.75rem; color: #cbd5e1; }
+
+        /* --- HUD ARCADE --- */
+        #arcade-hud { background-color: #0f172a; border-bottom: 1px solid var(--cell-border); justify-content: space-around; align-items: center; padding: 8px 5px; font-size: 0.9rem; font-weight: bold; box-shadow: inset 0 -5px 10px rgba(0,0,0,0.2); display: none; }
+        .stat-item { display: flex; align-items: center; gap: 5px; }
+        .stat-lives { color: #f43f5e; }
+        .stat-streak { color: #f59e0b; }
+        .stat-score { color: #3b82f6; }
+        .pulse-anim { animation: pulse 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.4); color: var(--warning); } 100% { transform: scale(1); } }
+
+        /* --- ZONA DEL JUEGO --- */
+        #game-section { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden; }
+        #math-hud { width: 100%; max-width: 400px; display: flex; justify-content: space-between; padding: 8px 20px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; font-weight: bold; font-size: 1rem; position: absolute; top: 0; z-index: 20; border: 1px solid var(--cell-border); border-top: none; display: none; }
+        .math-target { color: var(--warning); }
+        .math-current { color: var(--success); transition: color 0.3s; }
+        
+        #zoom-controls { position: absolute; right: 10px; top: 60px; display: flex; flex-direction: column; gap: 8px; z-index: 20; }
+        .zoom-btn { background: rgba(30, 41, 59, 0.8); color: white; border: 1px solid var(--cell-border); border-radius: 8px; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .zoom-btn:active { background: var(--accent); }
+        
+        #board-container { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; touch-action: none; position: relative; }
+        #board { display: grid; gap: 3px; background-color: var(--grid-bg); padding: 4px; border-radius: 8px; transition: transform 0.1s ease-out; transform-origin: center center; will-change: transform; }
+        .cell { background-color: var(--cell-bg); border-radius: 4px; position: relative; display: flex; justify-content: center; align-items: center; }
+        .entity { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-size: 2.2rem; z-index: 5; }
+        .robot { z-index: 10; transition: transform 0.3s ease-in-out; }
+        
+        .math-node { font-size: 1.1rem; font-weight: bold; color: #fff; border-radius: 50%; width: 80%; height: 80%; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); text-shadow: 1px 1px 2px black; }
+        .op-add { background: var(--success); border: 2px solid #059669; }
+        .op-sub { background: var(--danger); border: 2px solid #b91c1c; }
+        .op-mul { background: var(--purple); border: 2px solid #6d28d9; }
+        .op-div { background: var(--warning); border: 2px solid #d97706; }
+
+        /* --- ZONA DE CONTROLES --- */
+        #control-section { background-color: var(--panel-bg); padding: 10px 10px 20px 10px; border-top: 1px solid var(--cell-border); display: flex; flex-direction: column; gap: 10px; z-index: 30; }
+        #commands { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 500px; margin: 0 auto; width: 100%; }
+        button.cmd-btn { background-color: var(--grid-bg); color: var(--text-color); border: 2px solid var(--cell-border); border-radius: 8px; padding: 10px 5px; font-size: 1.5rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; touch-action: manipulation; }
+        button.cmd-btn:active { background-color: var(--cell-border); border-color: var(--accent); transform: scale(0.95); }
+        button.cmd-btn span { font-size: 0.65rem; text-transform: uppercase; font-weight: bold; color: #cbd5e1; }
+        
+        #program-ribbon { background-color: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; display: flex; gap: 8px; overflow-x: auto; height: 55px; align-items: center; border: 1px solid #334155; scroll-behavior: smooth; }
+        #program-ribbon::-webkit-scrollbar { height: 4px; }
+        #program-ribbon::-webkit-scrollbar-thumb { background: #64748b; border-radius: 4px; }
+        .empty-msg { color: #64748b; font-size: 0.8rem; font-style: italic; width: 100%; text-align: center; }
+        .cmd-item { flex-shrink: 0; background-color: var(--accent); color: white; width: 40px; height: 40px; border-radius: 6px; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: transform 0.1s; }
+        .cmd-item:active { background-color: var(--danger); transform: scale(0.9); }
+        .cmd-item.active-exec { background-color: var(--warning); transform: scale(1.15); z-index: 2; }
+        
+        #actions { display: flex; gap: 10px; max-width: 500px; margin: 0 auto; width: 100%; }
+        .action-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; color: white; text-transform: uppercase; cursor: pointer; transition: transform 0.1s; }
+        .action-btn:active { transform: translateY(2px); }
+        #btn-clear { background-color: var(--danger); }
+        #btn-run { background-color: var(--success); }
+        #btn-run:disabled { background-color: #475569; color: #94a3b8; cursor: not-allowed; }
+
+        /* Modales */
+        .cb-modal-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 100; padding: 20px; }
+        .cb-modal-content { background-color: var(--panel-bg); padding: 25px; border-radius: 12px; text-align: center; width: 100%; max-width: 350px; border: 1px solid var(--cell-border); box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        #modal-icon { font-size: 3.5rem; margin-bottom: 10px; }
+        #modal-title { font-size: 1.4rem; margin-bottom: 10px; color: white; font-weight: bold;}
+        #modal-text { color: #cbd5e1; margin-bottom: 20px; font-size: 0.95rem; white-space: pre-line; }
+        .cb-modal-btn { background-color: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; font-weight: bold; width: 100%; cursor: pointer; transition: transform 0.1s;}
+        .cb-modal-btn:active { transform: scale(0.95); }
+        
+        .modal-gameover { border-color: var(--danger) !important; }
+        .modal-gameover #modal-title { color: var(--danger) !important; }
+        .modal-gameover .cb-modal-btn { background-color: var(--danger) !important; }
+        
+        /* --- ENSAMBLAJE PREVIO --- */
+        #assembly-screen { background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%); padding: 20px; text-align: center; justify-content: center; align-items: center; }
+        .assembly-grid { display: flex; flex-direction: column; gap: 30px; align-items: center; max-width: 700px; width: 100%; margin-top: 10px; }
+        @media (min-width: 768px) { .assembly-grid { flex-direction: row; } }
+        .parts-list { flex: 1; display: flex; flex-direction: column; gap: 10px; width: 100%; }
+        .part-btn { background: var(--panel-bg); border: 2px solid var(--cell-border); color: white; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; text-align: left;}
+        .part-btn:hover:not(:disabled) { border-color: var(--accent); background: rgba(59, 130, 246, 0.1); }
+        .part-btn:active:not(:disabled) { transform: scale(0.98); }
+        .part-btn:disabled { opacity: 0.5; border-color: var(--success); cursor: not-allowed; }
+        .part-btn:disabled::after { content: '✅'; }
+        
+        .robot-blueprint { flex: 1; display: flex; justify-content: center; align-items: center; min-height: 250px; position: relative; width: 100%; }
+        .bp-chassis { width: 120px; height: 160px; border: 4px dashed var(--cell-border); border-radius: 20px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.5s; background: rgba(0,0,0,0.2); margin: 0 auto; }
+        .bp-chassis.fully-assembled { border-style: solid; border-color: var(--accent); background: var(--panel-bg); box-shadow: 0 0 30px rgba(59, 130, 246, 0.4); }
+        
+        .bp-part { position: absolute; opacity: 0; transform: scale(0); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .bp-part.installed { opacity: 1; transform: scale(1); }
+        
+        .bp-eye { top: 25px; font-size: 2rem; z-index: 2; }
+        .bp-arm-l { left: -30px; top: 60px; font-size: 2rem; transform-origin: right; }
+        .bp-arm-r { right: -30px; top: 60px; font-size: 2rem; transform-origin: left; }
+        .bp-core { top: 60px; font-size: 2.5rem; z-index: 2; }
+        .bp-ear-l { left: -15px; top: 25px; font-size: 1.5rem; }
+        .bp-ear-r { right: -15px; top: 25px; font-size: 1.5rem; }
+        .bp-brain { top: -35px; font-size: 2.5rem; filter: drop-shadow(0 0 10px var(--purple)); z-index: 3; }
+
+        #btn-boot { margin-top: 20px; background: var(--success); color: white; padding: 15px 40px; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 0 20px rgba(16, 185, 129, 0.4); display: none; animation: pulse-boot 1.5s infinite; margin-left: auto; margin-right: auto; }
+        @keyframes pulse-boot { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); box-shadow: 0 0 30px rgba(16, 185, 129, 0.7); } }
+        
+        .rules-content { text-align: left; max-width: 400px; }
+        .rules-content h2 { text-align: center; color: var(--accent); margin-bottom: 15px; font-size: 1.5rem; font-weight: bold;}
+        .rules-text { font-size: 0.95rem; color: #cbd5e1; max-height: 55vh; overflow-y: auto; padding-right: 10px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        .rules-text strong { color: white; }
+        .rules-text ul { padding-left: 25px; margin-top: 5px; list-style-type: disc; }
+        .rules-text li { margin-bottom: 5px; }
+        .rules-text::-webkit-scrollbar { width: 6px; }
+        .rules-text::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
     </style>
 </head>
-<body class="bg-slate-900 text-white antialiased">
+<body class="antialiased min-h-screen flex flex-col">
 
-    <!-- Contenedor principal -->
-    <div class="container mx-auto p-6 max-w-2xl">
+    <div class="container mx-auto p-6 max-w-4xl flex-grow">
         
-        <!-- Encabezado de la estación -->
         <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-500">MISIÓN CUMPLIDA</h1>
-            <h2 class="text-2xl md:text-3xl font-bold mt-2">¡El Robot Cobra Vida!</h2>
+            <h1 class="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500 tracking-wider">ESTACIÓN 5</h1>
+            <h2 class="text-2xl md:text-3xl font-bold mt-2 text-white">El Cerebro del Robot</h2>
         </header>
 
-        <!-- Tarjeta de contenido principal -->
-        <main class="bg-slate-800 rounded-2xl shadow-lg p-6 md:p-8">
-            
-            <!-- Texto de felicitación -->
-            <div class="mb-6">
-                <p class="text-lg leading-relaxed text-slate-300">
-                    ¡Excelente trabajo, equipo! Han superado todos los retos y activado los sensores de <strong class="text-cyan-400">proximidad</strong>, <strong class="text-green-400">tacto</strong>, <strong class="text-purple-400">color</strong> y <strong class="text-orange-400">sonido</strong>. Es hora de ver el resultado.
-                </p>
-            </div>
+        <div class="mb-6">
+            <p class="text-lg leading-relaxed text-slate-300">
+                Un robot no es nada sin su programación. El <strong>cerebro (microcontrolador)</strong> toma los datos de los sensores y ejecuta comandos lógicos (algoritmos) para moverse.
+                <br><strong>Reto:</strong> Eres el programador jefe. Usa los comandos de dirección para guiar al 🤖 a la meta 🏁, ¡y no olvides resolver las matemáticas por el camino!
+            </p>
+        </div>
 
-            <!-- Sección de Activación por Realidad Aumentada -->
-            <div class="bg-slate-900 rounded-lg p-6 border-2 border-amber-400/50 text-center">
-                <h3 class="text-2xl font-bold text-amber-300 mb-4">Activación Final por RA</h3>
-                <p class="text-slate-400 mb-6">¡Este es el código de activación final! Abran la cámara de su celular y apunten al código QR para proyectar el robot en su entorno.</p>
+        <!-- ==========================================
+             SIMULADOR CODEBOT (Aislado en contenedor)
+             ========================================== -->
+        <div class="bg-slate-800 p-2 md:p-4 rounded-3xl shadow-2xl border-4 border-slate-700 mx-auto max-w-2xl">
+            <div id="codebot-wrapper" class="rounded-xl shadow-inner border border-slate-900">
                 
-                <!-- CÓDIGO QR APUNTANDO A LA RUTA LOCAL -->
-                <img src="images/qr-final.png" alt="Código QR para ver el robot en Realidad Aumentada" class="mx-auto rounded-lg border-4 border-amber-400 shadow-lg w-64 h-64" onerror="this.onerror=null;this.src='https://placehold.co/256x256/1e293b/fbbf24?text=Error:+Revisa+la+ruta+images/qr-final.png';">
+                <!-- PANTALLA DE ENSAMBLAJE (Integración Previa) -->
+                <div id="assembly-screen" class="screen active">
+                    <div class="title-box" style="margin-bottom: 10px;">
+                        <h1 style="font-size: 2.2rem; color: #fff; font-weight: 900;">Taller de Ensamblaje</h1>
+                        <p>Antes de programar, integra los sensores aprendidos.</p>
+                    </div>
+                    
+                    <div class="assembly-grid">
+                        <div class="parts-list">
+                            <button class="part-btn" onclick="installPart('vision', this)"><span>👀 1. Ojos (Ultrasonido)</span></button>
+                            <button class="part-btn" onclick="installPart('tacto', this)"><span>🦾 2. Manos (Fuerza)</span></button>
+                            <button class="part-btn" onclick="installPart('color', this)"><span>🫀 3. Escáner (Color RGB)</span></button>
+                            <button class="part-btn" onclick="installPart('sonido', this)"><span>🎧 4. Oídos (Micrófono)</span></button>
+                            <button class="part-btn" onclick="installPart('cerebro', this)" style="border-color: var(--purple);"><span>🧠 5. CPU (Microcontrolador)</span></button>
+                        </div>
+                        
+                        <div class="robot-blueprint">
+                            <div id="bp-chassis" class="bp-chassis">
+                                <div id="part-vision" class="bp-part bp-eye">🥽</div>
+                                <div id="part-tacto-l" class="bp-part bp-arm-l">🦾</div>
+                                <div id="part-tacto-r" class="bp-part bp-arm-r">🦾</div>
+                                <div id="part-color" class="bp-part bp-core">🫀</div>
+                                <div id="part-sonido-l" class="bp-part bp-ear-l">🎧</div>
+                                <div id="part-sonido-r" class="bp-part bp-ear-r">🎧</div>
+                                <div id="part-cerebro" class="bp-part bp-brain">🧠</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="btn-boot" onclick="bootRobot()">⚡ ENCENDER ROBOT ⚡</button>
+                </div>
+
+                <!-- MENÚ PRINCIPAL -->
+                <div id="menu-screen" class="screen menu-container">
+                    <div class="title-box">
+                        <h1>🤖 CodeBot</h1>
+                        <p>Lógica Matemática y Programación</p>
+                    </div>
+                    <button class="menu-btn btn-single" onclick="showScreen('difficulty-screen')">
+                        🎮 Modo Arcade <span class="cb-badge">Campaña</span>
+                    </button>
+                    <button class="menu-btn btn-single" onclick="showScreen('categories-screen')">
+                        🎯 Práctica Libre <span class="cb-badge" style="background:var(--success)">Retos</span>
+                    </button>
+                </div>
+
+                <!-- SELECCIÓN DE DIFICULTAD -->
+                <div id="difficulty-screen" class="screen menu-container">
+                    <div class="title-box">
+                        <h1 style="font-size: 2.2rem;">Dificultad</h1>
+                        <p>Elige tu curva de aprendizaje</p>
+                    </div>
+                    <button class="menu-btn" style="border-color: var(--success);" onclick="showRules('principiante')">
+                        <div>🟢 Principiante (12 Niveles)</div>
+                        <div class="menu-desc">Curva suave. Ideal para aprender paso a paso.</div>
+                    </button>
+                    <button class="menu-btn" style="border-color: var(--warning);" onclick="showRules('intermedio')">
+                        <div>🟡 Intermedio (10 Niveles)</div>
+                        <div class="menu-desc">Equilibrado. Introducción a laberintos y multiplicaciones.</div>
+                    </button>
+                    <button class="menu-btn" style="border-color: var(--danger);" onclick="showRules('avanzado')">
+                        <div>🔴 Avanzado (8 Niveles)</div>
+                        <div class="menu-desc">Curva empinada. Jerarquías combinadas.</div>
+                    </button>
+                    <button class="menu-btn btn-back btn-single" onclick="showScreen('menu-screen')">⬅️ Volver</button>
+                </div>
+
+                <!-- SELECCIÓN DE CATEGORÍA -->
+                <div id="categories-screen" class="screen menu-container">
+                    <div class="title-box">
+                        <h1 style="font-size: 2.2rem;">Modo Práctica</h1>
+                        <p>Vidas infinitas, entrena a tu ritmo.</p>
+                    </div>
+                    <button class="menu-btn btn-single" style="border-color: var(--success);" onclick="startPractice('add')">➕ Retos de Suma</button>
+                    <button class="menu-btn btn-single" style="border-color: var(--danger);" onclick="startPractice('sub')">➖ Retos de Resta</button>
+                    <button class="menu-btn btn-single" style="border-color: var(--purple);" onclick="startPractice('mul')">✖️ Retos de Multiplicación</button>
+                    <button class="menu-btn btn-single" style="border-color: var(--warning);" onclick="startPractice('div')">➗ Retos de División</button>
+                    <button class="menu-btn btn-single" style="border-color: var(--accent);" onclick="startPractice('mixed')">🧠 Retos Mixtos</button>
+                    <button class="menu-btn btn-back btn-single" onclick="showScreen('menu-screen')">⬅️ Volver</button>
+                </div>
+
+                <!-- PANTALLA JUEGO -->
+                <div id="game-screen" class="screen">
+                    <header>
+                        <div class="header-left">
+                            <button class="btn-home" onclick="goHome()">🏠</button>
+                            <h2 class="game-title">CodeBot</h2>
+                        </div>
+                        <div class="level-info">
+                            <h3 id="ui-level-title">Cargando...</h3>
+                            <p id="ui-level-desc">--</p>
+                        </div>
+                    </header>
+
+                    <div id="arcade-hud">
+                        <div class="stat-item stat-lives">❤️ <span id="ui-lives">3</span></div>
+                        <div class="stat-item stat-streak">🔥 Racha x<span id="ui-streak">0</span></div>
+                        <div class="stat-item stat-score">⭐ <span id="ui-score">0</span> pts</div>
+                    </div>
+
+                    <div id="game-section">
+                        <div id="math-hud">
+                            <span class="math-target">Meta: <span id="ui-math-target">0</span></span>
+                            <span class="math-current">Valor: <span id="ui-math-current">0</span></span>
+                        </div>
+                        <div id="zoom-controls">
+                            <button class="zoom-btn" onclick="zoomIn()">➕</button>
+                            <button class="zoom-btn" onclick="zoomOut()">➖</button>
+                            <button class="zoom-btn" onclick="resetView()">🎯</button>
+                        </div>
+                        <div id="board-container"><div id="board"></div></div>
+                    </div>
+
+                    <div id="control-section">
+                        <div id="commands">
+                            <button class="cmd-btn" onclick="addCommand('TURN_LEFT')">↩️<span>Giro Izq</span></button>
+                            <button class="cmd-btn" onclick="addCommand('FORWARD')">⬆️<span>Avanzar</span></button>
+                            <button class="cmd-btn" onclick="addCommand('TURN_RIGHT')">↪️<span>Giro Der</span></button>
+                        </div>
+                        <div id="program-ribbon"><div class="empty-msg">Tu código aparecerá aquí</div></div>
+                        <div id="actions">
+                            <button id="btn-clear" class="action-btn" onclick="clearProgram()">🗑️ Limpiar</button>
+                            <button id="btn-run" class="action-btn" onclick="executeProgram()">▶️ Ejecutar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL DE REGLAS -->
+                <div id="rules-overlay" class="cb-modal-overlay">
+                    <div class="cb-modal-content rules-content">
+                        <h2>📖 ¿Cómo Jugar?</h2>
+                        <div class="rules-text">
+                            <p><strong>1. Objetivo:</strong> Programa al robot 🤖 para llegar a la meta 🏁 sin chocar con los muros 🧱.</p>
+                            <p><strong>2. Orientación Aleatoria:</strong> ¡Ojo! El robot puede aparecer mirando a cualquier lado. Usa comandos de giro primero si es necesario.</p>
+                            <p><strong>3. Retos Matemáticos:</strong> Fíjate en tu <strong>"Valor" inicial</strong> arriba. Debes pasar sobre las operaciones (➕, ➖, ✖️, ➗) para que al llegar a la meta, tu valor sea idéntico a la <strong>Meta</strong>.</p>
+                            
+                            <div id="arcade-rules" style="background:rgba(239, 68, 68, 0.1); padding: 10px; border-radius:8px; border-left: 3px solid var(--danger);">
+                                <p style="color: var(--danger); margin-bottom:5px;"><strong>🎮 Modo Campaña (Arcade):</strong></p>
+                                <ul>
+                                    <li>Empiezas con <strong>3 Vidas ❤️</strong>.</li>
+                                    <li><strong>🔥 Combo Racha:</strong> Pasa niveles sin fallar para multiplicar puntos.</li>
+                                    <li><strong>🎁 1UP:</strong> Gana 1 vida extra cada 3 niveles perfectos.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <button class="cb-modal-btn" onclick="closeRulesAndStart()">¡Entendido, a jugar!</button>
+                    </div>
+                </div>
+
+                <!-- Modal Global -->
+                <div id="modal-overlay" class="cb-modal-overlay">
+                    <div class="cb-modal-content">
+                        <div id="modal-icon">🏆</div>
+                        <h2 id="modal-title">¡Completado!</h2>
+                        <p id="modal-text">Mensaje</p>
+                        <button class="cb-modal-btn" id="modal-btn" onclick="closeModal()">Continuar</button>
+                    </div>
+                </div>
                 
-                <p class="mt-6 text-sm text-slate-500">Al escanear, sigan las instrucciones en pantalla y presionen "Ver en tu espacio".</p>
-            </div>
+            </div> <!-- Fin de codebot-wrapper -->
+        </div>
 
-            <!-- Reflexión Final -->
-            <div class="mt-8 bg-gray-700/50 border-l-4 border-gray-400 p-4 rounded-lg">
-                <h3 class="font-bold text-xl text-gray-200 mb-2">Reflexión Final: La Fusión de los Sentidos</h3>
-                <p class="text-gray-300 leading-relaxed">
-                    El robot que ves en 3D es el resultado de la integración. No podría moverse sin chocar, interactuar con objetos, seguir una ruta o reaccionar a una orden si sus sensores no trabajaran en equipo.
-                    <br><br>
-                    Al igual que los humanos, un robot es verdaderamente útil cuando todos sus "sentidos" se fusionan para comprender y actuar en el mundo.
-                </p>
-            </div>
-
-        </main>
-        
-        <footer class="text-center mt-8 text-slate-500 text-sm">
-            <p>Misión Sensores 🤖 ¡Completada!</p>
+        <footer class="text-center mt-12 mb-6 text-slate-500 text-sm font-medium">
+            <a href="index.html" class="inline-block px-6 py-2 bg-slate-800 hover:bg-slate-700 rounded-full transition-colors mb-4 border border-slate-700 text-white shadow-lg">
+                ← Volver al Menú Principal
+            </a>
+            <p>Misión Sensores 🤖 • Estación 5</p>
         </footer>
+
     </div>
 
+    <script>
+        /* =========================================
+           LÓGICA JAVASCRIPT DEL SIMULADOR CODEBOT
+           ========================================= */
+
+        /* --- BANCO DE 30 NIVELES --- */
+        const allLevels = [
+            // LÓGICA Y MOVIMIENTO (1-5)
+            { id: "L1", category: 'logic', title: "Movimiento", desc: "Avanza hacia la bandera.", size: 4, start: {x:0, y:0}, goal: {x:3, y:0}, walls: [], mathMode: false },
+            { id: "L2", category: 'logic', title: "Giro Simple", desc: "Esquiva la pared.", size: 5, start: {x:0, y:0}, goal: {x:2, y:2}, walls: [{x:1, y:0}, {x:1, y:1}], mathMode: false },
+            { id: "L16", category: 'logic', title: "Serpiente", desc: "Navega el pasillo sinuoso.", size: 6, start: {x:0, y:0}, goal: {x:4, y:0}, walls: [{x:1,y:0},{x:1,y:1},{x:1,y:2},{x:1,y:3},{x:1,y:4}, {x:3,y:1},{x:3,y:2},{x:3,y:3},{x:3,y:4},{x:3,y:5}], mathMode: false },
+            { id: "L17", category: 'logic', title: "Las Cuatro Esquinas", desc: "Debes dar un rodeo largo.", size: 7, start: {x:3, y:3}, goal: {x:0, y:0}, walls: [{x:1,y:1},{x:2,y:1},{x:3,y:1},{x:4,y:1},{x:5,y:1}, {x:1,y:5},{x:2,y:5},{x:3,y:5},{x:4,y:5},{x:5,y:5}, {x:1,y:2},{x:1,y:3},{x:1,y:4}, {x:5,y:2},{x:5,y:3},{x:5,y:4}], mathMode: false },
+            { id: "L23", category: 'logic', title: "Gran Viaje", desc: "Optimiza tus comandos.", size: 8, start: {x:0, y:7}, goal: {x:7, y:0}, walls: [{x:2,y:2},{x:2,y:3},{x:2,y:4},{x:2,y:5},{x:5,y:2},{x:5,y:3},{x:5,y:4},{x:5,y:5}], mathMode: false },
+
+            // SUMA (6-10)
+            { id: "L3", category: 'add', title: "Suma Básica", desc: "Recolecta para sumar 5.", size: 5, start: {x:0, y:0}, goal: {x:4, y:4}, walls: [{x:2, y:1}, {x:2, y:2}], mathMode: true, mathStart: 0, mathTarget: 5, mathNodes: [{x:2, y:0, op:'+', val:3}, {x:2, y:4, op:'+', val:2}] },
+            { id: "L5", category: 'add', title: "Suma Estratégica", desc: "Suma 10 sin pasarte.", size: 6, start: {x:0, y:0}, goal: {x:5, y:5}, walls: [{x:3, y:2}, {x:3, y:3}, {x:3, y:4}], mathMode: true, mathStart: 0, mathTarget: 10, mathNodes: [{x:2, y:0, op:'+', val:7}, {x:5, y:0, op:'+', val:8}, {x:2, y:5, op:'+', val:3}] },
+            { id: "L18", category: 'add', title: "Suma Grande", desc: "Busca la ruta para sumar 50.", size: 6, start: {x:0, y:0}, goal: {x:5, y:5}, walls: [{x:2,y:2},{x:3,y:2}], mathMode: true, mathStart: 0, mathTarget: 50, mathNodes: [{x:2, y:0, op:'+', val:10}, {x:5, y:0, op:'+', val:20}, {x:0, y:5, op:'+', val:15}, {x:2, y:5, op:'+', val:25}] },
+            { id: "L27", category: 'add', title: "Recolector", desc: "Suma exactamente 21.", size: 7, start: {x:3, y:3}, goal: {x:0, y:0}, walls: [], mathMode: true, mathStart: 0, mathTarget: 21, mathNodes: [{x:3,y:1,op:'+',val:1},{x:5,y:3,op:'+',val:5},{x:3,y:5,op:'+',val:10},{x:1,y:3,op:'+',val:10}] },
+            
+            // RESTA (11-15)
+            { id: "L4", category: 'sub', title: "Resta Básica", desc: "Inicias con 10, llega con 4.", size: 5, start: {x:0, y:0}, goal: {x:4, y:4}, walls: [{x:1, y:1}, {x:2, y:1}, {x:3, y:1}], mathMode: true, mathStart: 10, mathTarget: 4, mathNodes: [{x:4, y:0, op:'-', val:3}, {x:4, y:3, op:'-', val:3}] },
+            { id: "L7", category: 'sub', title: "Evasión y Resta", desc: "Inicias con 20, llega con 5.", size: 6, start: {x:0, y:0}, goal: {x:5, y:0}, walls: [{x:1, y:4}, {x:2, y:4}, {x:3, y:4}], mathMode: true, mathStart: 20, mathTarget: 5, mathNodes: [{x:0, y:5, op:'-', val:10}, {x:5, y:5, op:'-', val:5}, {x:3, y:1, op:'-', val:15}] },
+            { id: "L19", category: 'sub', title: "Precisión", desc: "Inicias en 15, llega en 0.", size: 5, start: {x:2, y:2}, goal: {x:0, y:0}, walls: [], mathMode: true, mathStart: 15, mathTarget: 0, mathNodes: [{x:2,y:0,op:'-',val:5},{x:4,y:2,op:'-',val:3},{x:2,y:4,op:'-',val:7},{x:0,y:2,op:'-',val:2}] },
+            { id: "L28", category: 'sub', title: "Esquiva la trampa", desc: "De 100 baja a 10.", size: 7, start: {x:0, y:0}, goal: {x:6, y:6}, walls: [{x:3,y:0},{x:3,y:1},{x:3,y:2},{x:3,y:4},{x:3,y:5},{x:3,y:6}], mathMode: true, mathStart: 100, mathTarget: 10, mathNodes: [{x:1,y:3,op:'-',val:40},{x:5,y:3,op:'-',val:50},{x:3,y:3,op:'-',val:90}] },
+
+            // MULTIPLICACIÓN (16-19)
+            { id: "L8", category: 'mul', title: "Multiplicación", desc: "Multiplica para tener 12.", size: 5, start: {x:0, y:0}, goal: {x:4, y:4}, walls: [{x:1, y:2}, {x:3, y:2}], mathMode: true, mathStart: 1, mathTarget: 12, mathNodes: [{x:2, y:0, op:'*', val:3}, {x:4, y:2, op:'*', val:4}] },
+            { id: "L11", category: 'mul', title: "Factores de 24", desc: "Llega con 24 exactos.", size: 6, start: {x:0, y:0}, goal: {x:5, y:5}, walls: [{x:2, y:1}, {x:2, y:2}, {x:2, y:3}], mathMode: true, mathStart: 2, mathTarget: 24, mathNodes: [{x:0, y:4, op:'*', val:4}, {x:4, y:4, op:'*', val:3}, {x:4, y:0, op:'*', val:5}] },
+            { id: "L20", category: 'mul', title: "Potencias", desc: "Inicias en 2. Llega a 32.", size: 6, start: {x:0, y:0}, goal: {x:5, y:0}, walls: [{x:2,y:2},{x:2,y:3}], mathMode: true, mathStart: 2, mathTarget: 32, mathNodes: [{x:2,y:0,op:'*',val:2},{x:2,y:5,op:'*',val:4},{x:5,y:5,op:'*',val:4},{x:0,y:5,op:'*',val:2}] },
+
+            // DIVISIÓN (20-23)
+            { id: "L9", category: 'div', title: "División Básica", desc: "Reduce 20 a 5.", size: 5, start: {x:0, y:0}, goal: {x:4, y:4}, walls: [], mathMode: true, mathStart: 20, mathTarget: 5, mathNodes: [{x:4, y:0, op:'/', val:4}, {x:2, y:2, op:'/', val:2}] },
+            { id: "L12", category: 'div', title: "Fraccionar", desc: "Inicias con 48. Llega con 3.", size: 6, start: {x:0, y:0}, goal: {x:5, y:5}, walls: [{x:1, y:1}, {x:2, y:1}, {x:3, y:1}], mathMode: true, mathStart: 48, mathTarget: 3, mathNodes: [{x:0, y:3, op:'/', val:4}, {x:3, y:3, op:'/', val:4}, {x:5, y:0, op:'/', val:2}] },
+            { id: "L21", category: 'div', title: "Reducción Máxima", desc: "Baja 100 a 5.", size: 6, start: {x:5, y:0}, goal: {x:0, y:5}, walls: [{x:2,y:2},{x:3,y:3}], mathMode: true, mathStart: 100, mathTarget: 5, mathNodes: [{x:5,y:5,op:'/',val:2},{x:0,y:0,op:'/',val:10},{x:2,y:0,op:'/',val:5}] },
+            
+            // MIXTOS Y JERARQUÍAS (24-30)
+            { id: "L10", category: 'mixed', title: "Reto Mixto 1", desc: "Suma y multiplica a 20.", size: 5, start: {x:0, y:0}, goal: {x:4, y:4}, walls: [{x:2, y:2}], mathMode: true, mathStart: 2, mathTarget: 20, mathNodes: [{x:3, y:0, op:'+', val:3}, {x:0, y:3, op:'*', val:4}] },
+            { id: "L13", category: 'mixed', title: "Jerarquía", desc: "Multiplica, luego resta para 10.", size: 6, start: {x:0, y:0}, goal: {x:5, y:5}, walls: [{x:2, y:3}, {x:3, y:3}, {x:4, y:3}], mathMode: true, mathStart: 5, mathTarget: 10, mathNodes: [{x:5, y:0, op:'*', val:3}, {x:0, y:5, op:'-', val:5}] },
+            { id: "L22", category: 'mixed', title: "Prioridades", desc: "El orden altera el resultado.", size: 5, start: {x:2, y:2}, goal: {x:4, y:4}, walls: [{x:3,y:3}], mathMode: true, mathStart: 0, mathTarget: 10, mathNodes: [{x:0,y:0,op:'+',val:5},{x:4,y:0,op:'*',val:2}] },
+            { id: "L24", category: 'mixed', title: "Balance", desc: "Suma y resta para mantener 10.", size: 6, start: {x:0, y:0}, goal: {x:5, y:5}, walls: [{x:2,y:2},{x:3,y:3}], mathMode: true, mathStart: 10, mathTarget: 10, mathNodes: [{x:1,y:1,op:'+',val:5},{x:4,y:1,op:'-',val:3},{x:1,y:4,op:'+',val:2},{x:4,y:4,op:'-',val:4}] },
+            { id: "L25", category: 'mixed', title: "Doble Reto", desc: "Inicia con 3. Llega a 12.", size: 6, start: {x:0, y:5}, goal: {x:5, y:0}, walls: [{x:2,y:2},{x:2,y:3},{x:3,y:2},{x:3,y:3}], mathMode: true, mathStart: 3, mathTarget: 12, mathNodes: [{x:0,y:0,op:'*',val:3},{x:5,y:5,op:'+',val:3}] },
+            { id: "L26", category: 'mixed', title: "Escala", desc: "Inicia 10. Termina en 15.", size: 7, start: {x:3, y:3}, goal: {x:6, y:6}, walls: [{x:3,y:1},{x:3,y:5},{x:1,y:3},{x:5,y:3}], mathMode: true, mathStart: 10, mathTarget: 15, mathNodes: [{x:3,y:0,op:'/',val:2},{x:3,y:6,op:'*',val:3}] },
+            { id: "L29", category: 'mixed', title: "Cálculo Avanzado", desc: "Inicia con 5. Llega a 13.", size: 7, start: {x:0, y:0}, goal: {x:6, y:0}, walls: [{x:3,y:0},{x:3,y:1},{x:3,y:2}], mathMode: true, mathStart: 5, mathTarget: 13, mathNodes: [{x:0,y:6,op:'*',val:2},{x:6,y:6,op:'+',val:3}] },
+            { id: "L14", category: 'mixed', title: "Reto Final Mixto", desc: "Divide, suma y multiplica a 30.", size: 6, start: {x:0, y:0}, goal: {x:5, y:5}, walls: [{x:2, y:0}, {x:2, y:1}, {x:2, y:2}, {x:4, y:5}], mathMode: true, mathStart: 10, mathTarget: 30, mathNodes: [{x:0, y:5, op:'/', val:2}, {x:3, y:5, op:'+', val:5}, {x:5, y:2, op:'*', val:3}] },
+            { id: "L30", category: 'mixed', title: "El Examen Final", desc: "Calcula perfecto para 42.", size: 8, start: {x:0, y:0}, goal: {x:7, y:7}, walls: [{x:3,y:3},{x:3,y:4},{x:4,y:3},{x:4,y:4}], mathMode: true, mathStart: 10, mathTarget: 42, mathNodes: [{x:2,y:2,op:'+',val:5},{x:5,y:2,op:'*',val:3},{x:5,y:5,op:'-',val:3}] }
+        ];
+
+        /* --- MAPEO DE CAMPAÑAS --- */
+        const campaigns = {
+            'principiante': ["L1", "L2", "L16", "L3", "L18", "L4", "L5", "L19", "L8", "L9", "L20", "L21"], // 12 Niveles
+            'intermedio': ["L6", "L23", "L27", "L24", "L7", "L10", "L22", "L25", "L11", "L12"], // 10 Niveles
+            'avanzado': ["L17", "L28", "L26", "L13", "L29", "L14", "L15", "L30"] // 8 Niveles
+        };
+
+        /* === ESTADO DEL JUEGO === */
+        let currentMode = 'arcade', currentLevelList = [], currentIndex = 0, pendingDifficulty = '';
+        let currentLevel, programSequence = [], robotState = { x:0, y:0, dir:0 };
+        let activeMathNodes = [], currentValue = 0, isExecuting = false, executionHalted = false;
+        let arcadeLives = 3, arcadeScore = 0, arcadeStreak = 0;
+        let currentSessionDir = 0; // Dirección inicial aleatoria para la sesión del nivel
+
+        /* === LÓGICA DE ENSAMBLAJE PREVIO === */
+        let partsInstalled = 0;
+        function installPart(partId, btn) {
+            btn.disabled = true;
+            partsInstalled++;
+            
+            if(partId === 'vision') document.getElementById('part-vision').classList.add('installed');
+            if(partId === 'tacto') { document.getElementById('part-tacto-l').classList.add('installed'); document.getElementById('part-tacto-r').classList.add('installed'); }
+            if(partId === 'color') document.getElementById('part-color').classList.add('installed');
+            if(partId === 'sonido') { document.getElementById('part-sonido-l').classList.add('installed'); document.getElementById('part-sonido-r').classList.add('installed'); }
+            if(partId === 'cerebro') document.getElementById('part-cerebro').classList.add('installed');
+            
+            if (partsInstalled === 5) {
+                document.getElementById('bp-chassis').classList.add('fully-assembled');
+                document.getElementById('btn-boot').style.display = 'block';
+            }
+        }
+        
+        function bootRobot() {
+            showScreen('menu-screen');
+        }
+
+        function showScreen(id) { 
+            document.querySelectorAll('#codebot-wrapper .screen').forEach(s => s.classList.remove('active')); 
+            document.getElementById(id).classList.add('active'); 
+        }
+        
+        function goHome() { 
+            executionHalted = true; 
+            isExecuting = false; 
+            showScreen('menu-screen'); 
+        }
+
+        function showRules(difficultyOrPractice) {
+            pendingDifficulty = difficultyOrPractice;
+            document.getElementById('rules-overlay').style.display = 'flex';
+        }
+
+        function closeRulesAndStart() {
+            document.getElementById('rules-overlay').style.display = 'none';
+            if (['principiante', 'intermedio', 'avanzado'].includes(pendingDifficulty)) startArcadeMode(pendingDifficulty);
+            else if (pendingDifficulty === 'practice') showScreen('categories-screen');
+        }
+
+        function startArcadeMode(difficulty) {
+            currentMode = 'arcade'; 
+            currentLevelList = campaigns[difficulty].map(levelId => allLevels.find(l => l.id === levelId)).filter(l => l); // .filter para evitar undefined si falta algun ID
+            currentIndex = 0; arcadeLives = 3; arcadeScore = 0; arcadeStreak = 0;
+            document.getElementById('arcade-hud').style.display = 'flex'; 
+            updateArcadeHUD();
+            showScreen('game-screen'); 
+            loadLevel(currentIndex);
+        }
+
+        function startPractice(cat) {
+            currentMode = 'practice'; 
+            currentLevelList = allLevels.filter(l => l.category === cat);
+            if (currentLevelList.length === 0) return alert("Próximamente más niveles en esta categoría.");
+            currentIndex = 0; 
+            document.getElementById('arcade-hud').style.display = 'none';
+            showScreen('game-screen'); 
+            loadLevel(currentIndex);
+        }
+
+        function updateArcadeHUD() {
+            if(currentMode !== 'arcade') return;
+            document.getElementById('ui-lives').innerText = arcadeLives; 
+            document.getElementById('ui-score').innerText = arcadeScore;
+            const streakEl = document.getElementById('ui-streak'); 
+            streakEl.innerText = arcadeStreak;
+            if(arcadeStreak > 0) { 
+                streakEl.classList.remove('pulse-anim'); 
+                void streakEl.offsetWidth; 
+                streakEl.classList.add('pulse-anim'); 
+            }
+        }
+
+        /* === MOTOR NIVEL === */
+        function loadLevel(index) {
+            executionHalted = false; isExecuting = false;
+            
+            if (index >= currentLevelList.length) {
+                if(currentMode === 'arcade') {
+                    showModal("🏆", "¡Campaña Superada!", `¡Has completado todos los retos de esta dificultad!\nPuntuación Total: ⭐ ${arcadeScore}\nVidas sobrantes: ❤️ ${arcadeLives}`, () => goHome());
+                } else {
+                    showModal("👑", "¡Felicidades!", "Completaste esta categoría de práctica.", () => showScreen('categories-screen'));
+                }
+                return;
+            }
+            
+            currentLevel = currentLevelList[index];
+            programSequence = []; 
+            currentValue = currentLevel.mathStart || 0; 
+            
+            // Aleatoriedad de Orientación (0, 90, 180, 270)
+            currentSessionDir = [0, 90, 180, 270][Math.floor(Math.random() * 4)];
+            robotState = { x: currentLevel.start.x, y: currentLevel.start.y, dir: currentSessionDir };
+            
+            resetView(); 
+            
+            const mathHud = document.getElementById('math-hud');
+            if (currentLevel.mathMode) {
+                activeMathNodes = JSON.parse(JSON.stringify(currentLevel.mathNodes));
+                mathHud.style.display = 'flex'; 
+                document.getElementById('ui-math-target').innerText = currentLevel.mathTarget; 
+                updateMathUI();
+                
+                const valEl = document.getElementById('ui-math-current').parentElement;
+                valEl.classList.remove('pulse-anim'); 
+                void valEl.offsetWidth; 
+                valEl.classList.add('pulse-anim');
+            } else { 
+                activeMathNodes = []; 
+                mathHud.style.display = 'none'; 
+            }
+
+            let titlePrefix = currentMode === 'arcade' ? `Nivel ${index + 1}: ` : "";
+            document.getElementById('ui-level-title').innerText = titlePrefix + currentLevel.title;
+            document.getElementById('ui-level-desc').innerText = currentLevel.desc;
+
+            createBoard(); 
+            renderProgram();
+        }
+
+        function getOpData(op, val) {
+            switch(op) { 
+                case '+': return { str: `+${val}`, css: 'op-add' }; 
+                case '-': return { str: `-${val}`, css: 'op-sub' }; 
+                case '*': return { str: `x${val}`, css: 'op-mul' }; 
+                case '/': return { str: `÷${val}`, css: 'op-div' }; 
+                default: return { str: val, css: 'op-add'}; 
+            }
+        }
+
+        function createBoard() {
+            const board = document.getElementById('board'); 
+            board.innerHTML = '';
+            const bCont = document.getElementById('board-container');
+            const cellSize = Math.max(45, Math.floor(Math.min(bCont.offsetWidth - 20, bCont.offsetHeight - 20) / currentLevel.size));
+            
+            board.style.gridTemplateColumns = `repeat(${currentLevel.size}, ${cellSize}px)`; 
+            board.style.gridTemplateRows = `repeat(${currentLevel.size}, ${cellSize}px)`;
+            
+            for (let y = 0; y < currentLevel.size; y++) {
+                for (let x = 0; x < currentLevel.size; x++) { 
+                    const cell = document.createElement('div'); 
+                    cell.className = 'cell'; 
+                    cell.id = `cell-${x}-${y}`; 
+                    board.appendChild(cell); 
+                }
+            }
+            drawEntities(); 
+            if (currentLevel.size >= 7) { currentScale = 0.85; updateTransform(); }
+        }
+
+        function drawEntities() {
+            document.querySelectorAll('#board .entity').forEach(e => e.remove());
+            
+            currentLevel.walls.forEach(w => drawIcon(w.x, w.y, '🧱'));
+            drawIcon(currentLevel.goal.x, currentLevel.goal.y, '🏁');
+            
+            activeMathNodes.forEach(node => {
+                const el = document.createElement('div');
+                const ui = getOpData(node.op, node.val);
+                el.className = `entity math-node ${ui.css}`; 
+                el.innerText = ui.str;
+                document.getElementById(`cell-${node.x}-${node.y}`)?.appendChild(el);
+            });
+            
+            const robot = document.createElement('div');
+            robot.id = 'robot-el'; 
+            robot.className = 'entity robot'; 
+            robot.innerText = '🤖';
+            robot.style.transform = `rotate(${robotState.dir}deg)`;
+            document.getElementById(`cell-${robotState.x}-${robotState.y}`)?.appendChild(robot);
+        }
+        
+        function drawIcon(x, y, e) { 
+            const el = document.createElement('div'); 
+            el.className = 'entity'; 
+            el.innerText = e; 
+            document.getElementById(`cell-${x}-${y}`)?.appendChild(el); 
+        }
+        
+        function updateMathUI() { 
+            const valEl = document.getElementById('ui-math-current'); 
+            valEl.innerText = currentValue; 
+            valEl.style.color = "white"; 
+            setTimeout(() => valEl.style.color = "var(--success)", 200);
+        }
+
+        /* === CÁMARA PAN/ZOOM === */
+        let currentScale = 1, panX = 0, panY = 0, isPanning = false, startX = 0, startY = 0, initialPinch = null;
+        const bCont = document.getElementById('board-container'), boardEl = document.getElementById('board');
+        
+        function updateTransform() { 
+            const maxPan = 600 * currentScale; 
+            panX = Math.max(-maxPan, Math.min(maxPan, panX)); 
+            panY = Math.max(-maxPan, Math.min(maxPan, panY)); 
+            boardEl.style.transform = `translate(${panX}px, ${panY}px) scale(${currentScale})`; 
+        }
+        function zoomIn() { currentScale = Math.min(currentScale + 0.3, 3); updateTransform(); }
+        function zoomOut() { currentScale = Math.max(currentScale - 0.3, 0.4); updateTransform(); }
+        function resetView() { currentScale = 1; panX = 0; panY = 0; updateTransform(); }
+        
+        bCont.addEventListener('touchstart', (e) => { e.preventDefault(); if (e.touches.length === 1) { isPanning = true; startX = e.touches[0].clientX - panX; startY = e.touches[0].clientY - panY; } else if (e.touches.length === 2) { isPanning = false; initialPinch = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); } });
+        bCont.addEventListener('touchmove', (e) => { e.preventDefault(); if (e.touches.length === 1 && isPanning) { panX = e.touches[0].clientX - startX; panY = e.touches[0].clientY - startY; updateTransform(); } else if (e.touches.length === 2 && initialPinch) { const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); currentScale = Math.max(0.4, Math.min(3, currentScale + ((dist - initialPinch) * 0.005))); initialPinch = dist; updateTransform(); } });
+        bCont.addEventListener('touchend', () => { isPanning = false; initialPinch = null; });
+        bCont.addEventListener('mousedown', (e) => { e.preventDefault(); isPanning = true; startX = e.clientX - panX; startY = e.clientY - panY; boardEl.style.transition='none'; });
+        bCont.addEventListener('mousemove', (e) => { if (isPanning) { panX = e.clientX - startX; panY = e.clientY - startY; updateTransform(); }});
+        bCont.addEventListener('mouseup', () => { isPanning = false; boardEl.style.transition='transform 0.1s'; });
+        bCont.addEventListener('mouseleave', () => { isPanning = false; });
+        bCont.addEventListener('wheel', (e) => { e.preventDefault(); e.deltaY < 0 ? zoomIn() : zoomOut(); });
+
+        /* === CONTROLES (PROGRAMACIÓN) === */
+        const cmdIcons = { 'FORWARD': '⬆️', 'TURN_LEFT': '↩️', 'TURN_RIGHT': '↪️' };
+        
+        function addCommand(cmd) { 
+            if (isExecuting || programSequence.length >= 60) return; 
+            programSequence.push(cmd); 
+            renderProgram(); 
+        }
+        function removeCommand(i) { 
+            if (!isExecuting) { 
+                programSequence.splice(i, 1); 
+                renderProgram(); 
+            } 
+        }
+        function clearProgram() { 
+            if (!isExecuting) { 
+                programSequence = []; 
+                renderProgram(); 
+            } 
+        }
+        function renderProgram() {
+            const ribbon = document.getElementById('program-ribbon'); 
+            ribbon.innerHTML = '';
+            
+            if (programSequence.length === 0) {
+                ribbon.innerHTML = '<div class="empty-msg">Tu código aparecerá aquí</div>';
+                return;
+            }
+            
+            programSequence.forEach((cmd, i) => {
+                const el = document.createElement('div'); 
+                el.className = 'cmd-item'; 
+                el.id = `cmd-${i}`; 
+                el.innerText = cmdIcons[cmd];
+                el.onclick = () => removeCommand(i); 
+                ribbon.appendChild(el);
+            });
+            ribbon.scrollLeft = ribbon.scrollWidth;
+        }
+
+        /* === EJECUCIÓN DEL CÓDIGO === */
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+        
+        function applyMath(c, op, v) { 
+            switch(op){ 
+                case '+': return c+v; 
+                case '-': return c-v; 
+                case '*': return c*v; 
+                case '/': return Math.floor(c/v); 
+                default: return c; 
+            } 
+        }
+
+        async function executeProgram() {
+            if (isExecuting || programSequence.length === 0) return;
+            
+            isExecuting = true; 
+            executionHalted = false; 
+            document.getElementById('btn-run').disabled = true;
+            
+            // Reiniciar estado
+            robotState = { x: currentLevel.start.x, y: currentLevel.start.y, dir: currentSessionDir };
+            currentValue = currentLevel.mathStart || 0;
+            
+            if (currentLevel.mathMode) { 
+                activeMathNodes = JSON.parse(JSON.stringify(currentLevel.mathNodes)); 
+                updateMathUI(); 
+            }
+            
+            drawEntities(); 
+            resetView(); 
+            await sleep(400);
+
+            let failed = false; 
+            const ribbon = document.getElementById('program-ribbon');
+
+            for (let i = 0; i < programSequence.length; i++) {
+                if (executionHalted) break;
+                
+                document.querySelectorAll('.cmd-item').forEach(el => el.classList.remove('active-exec'));
+                const cmdEl = document.getElementById(`cmd-${i}`);
+                if (cmdEl) { 
+                    cmdEl.classList.add('active-exec'); 
+                    ribbon.scrollLeft = cmdEl.offsetLeft - (ribbon.offsetWidth / 2) + 20; 
+                }
+
+                const cmd = programSequence[i];
+                if (cmd === 'TURN_LEFT') {
+                    robotState.dir = (robotState.dir - 90) % 360;
+                } else if (cmd === 'TURN_RIGHT') {
+                    robotState.dir = (robotState.dir + 90) % 360;
+                } else if (cmd === 'FORWARD') {
+                    let dx = 0, dy = 0, nDir = ((robotState.dir % 360) + 360) % 360; 
+                    if(nDir === 0) dy = -1; else if(nDir === 90) dx = 1; else if(nDir === 180) dy = 1; else if(nDir === 270) dx = -1;
+                    const nx = robotState.x + dx, ny = robotState.y + dy;
+
+                    // Colisión Bordes
+                    if (nx < 0 || ny < 0 || nx >= currentLevel.size || ny >= currentLevel.size) { 
+                        await handleArcadeError("¡Fuera del tablero!", "El robot cayó al vacío."); 
+                        failed = true; 
+                        break; 
+                    }
+                    // Colisión Muros
+                    if (currentLevel.walls.some(w => w.x === nx && w.y === ny)) { 
+                        await handleArcadeError("¡Colisión! 🧱", "Chocaste con un muro."); 
+                        failed = true; 
+                        break; 
+                    }
+
+                    robotState.x = nx; 
+                    robotState.y = ny;
+                    
+                    // Recolección Matemáticas
+                    if (currentLevel.mathMode) {
+                        const nodeIdx = activeMathNodes.findIndex(n => n.x === nx && n.y === ny);
+                        if (nodeIdx !== -1) {
+                            currentValue = applyMath(currentValue, activeMathNodes[nodeIdx].op, activeMathNodes[nodeIdx].val);
+                            activeMathNodes.splice(nodeIdx, 1); 
+                            updateMathUI();
+                        }
+                    }
+                }
+                
+                drawEntities(); 
+                await sleep(450);
+            }
+
+            if (!executionHalted) {
+                document.querySelectorAll('.cmd-item').forEach(el => el.classList.remove('active-exec'));
+                if (!failed) checkWinCondition();
+            }
+            
+            isExecuting = false; 
+            document.getElementById('btn-run').disabled = false;
+        }
+
+        async function handleArcadeError(title, text) {
+            drawIcon(robotState.x, robotState.y, '💥'); 
+            await sleep(300);
+            
+            if(currentMode === 'arcade') {
+                arcadeLives--; 
+                arcadeStreak = 0; 
+                updateArcadeHUD();
+                
+                if(arcadeLives <= 0) { 
+                    showGameOverModal(); 
+                    return; 
+                }
+                text += "\n\nPierdes 1 ❤️. Revisa tu código e inténtalo de nuevo.";
+            }
+            showModal("❌", title, text, resetLevelState);
+        }
+
+        function checkWinCondition() {
+            const onGoal = (robotState.x === currentLevel.goal.x && robotState.y === currentLevel.goal.y);
+            if (!onGoal) return handleArcadeError("Incompleto 🐞", "El programa terminó, pero no llegaste a la meta (bandera).");
+            
+            if (currentLevel.mathMode && currentValue !== currentLevel.mathTarget) {
+                return handleArcadeError("Error Matemático ✖️", `Llegaste con valor ${currentValue}, pero necesitabas ${currentLevel.mathTarget}.`);
+            }
+            
+            let winMsg = "¡Algoritmo correcto!";
+            if(currentMode === 'arcade') {
+                arcadeStreak++;
+                let ptsEarned = 100 + (arcadeStreak * 50); 
+                arcadeScore += ptsEarned;
+                winMsg = `Puntos: +${ptsEarned}\n¡Racha actual: x${arcadeStreak}! 🔥`;
+                
+                if(arcadeStreak > 0 && arcadeStreak % 3 === 0) { 
+                    arcadeLives++; 
+                    winMsg += `\n\n¡INCREÍBLE! +1 ❤️ (Vida Extra)`; 
+                }
+                updateArcadeHUD();
+            }
+
+            showModal("✅", "¡Nivel Completado!", winMsg, () => { 
+                currentIndex++; 
+                loadLevel(currentIndex); 
+            });
+        }
+
+        function resetLevelState() {
+            robotState = { x: currentLevel.start.x, y: currentLevel.start.y, dir: currentSessionDir }; 
+            resetView();
+            if (currentLevel.mathMode) { 
+                activeMathNodes = JSON.parse(JSON.stringify(currentLevel.mathNodes)); 
+                currentValue = currentLevel.mathStart || 0; 
+                updateMathUI(); 
+            }
+            drawEntities();
+        }
+
+        /* === GESTIÓN MODALES === */
+        let modalCallback = null;
+        
+        function showModal(icon, title, text, callback = null) {
+            const mc = document.querySelector('#modal-overlay .cb-modal-content'); 
+            mc.classList.remove('modal-gameover');
+            
+            document.getElementById('modal-icon').innerText = icon; 
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-text').innerText = text; 
+            document.getElementById('modal-btn').innerText = "Continuar";
+            
+            document.getElementById('modal-overlay').style.display = 'flex'; 
+            modalCallback = callback;
+        }
+
+        function showGameOverModal() {
+            const mc = document.querySelector('#modal-overlay .cb-modal-content'); 
+            mc.classList.add('modal-gameover');
+            
+            document.getElementById('modal-icon').innerText = "💀"; 
+            document.getElementById('modal-title').innerText = "¡Juego Terminado!";
+            document.getElementById('modal-text').innerText = `Te has quedado sin vidas.\n\nPuntuación Final: ⭐ ${arcadeScore}\nNiveles superados: ${currentIndex}`;
+            document.getElementById('modal-btn').innerText = "Volver al Menú"; 
+            
+            document.getElementById('modal-overlay').style.display = 'flex'; 
+            modalCallback = goHome;
+        }
+
+        function closeModal() { 
+            document.getElementById('modal-overlay').style.display = 'none'; 
+            if (modalCallback) { 
+                modalCallback(); 
+                modalCallback = null; 
+            } 
+        }
+        
+        // Ajuste en el resize para asegurar que el tablero siempre quede encuadrado
+        window.addEventListener('resize', () => {
+            if (document.getElementById('game-screen').classList.contains('active')) {
+                createBoard();
+            }
+        });
+    </script>
 </body>
 </html>
